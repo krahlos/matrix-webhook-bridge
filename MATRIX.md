@@ -81,8 +81,8 @@ Use the Synapse API to invite the AS bot user to a room:
 curl -s -X POST \
   -H "Authorization: Bearer <user_mct>" \
   -H "Content-Type: application/json" \
-  -d '{"user_id": "@<as_user>:matrix.krahl.io"}' \
-  'https://matrix.krahl.io/_matrix/client/v3/rooms/<room_id>/invite'
+  -d '{"user_id": "@<as_user>:<matrix_base_url>"}' \
+  'https://<matrix_base_url>/_matrix/client/v3/rooms/<room_id>/invite'
 ```
 
 ## Accept the invite with the AS token
