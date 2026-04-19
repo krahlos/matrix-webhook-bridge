@@ -1,0 +1,10 @@
+[Unit]
+Description=Report new CrowdSec decisions via matrix-webhook-bridge
+Documentation=https://github.com/krahlos/matrix-webhook-bridge
+After=crowdsec.service
+Requires=crowdsec.service
+
+[Service]
+Type=oneshot
+ExecStart=/etc/crowdsec/notify-decisions.py
+Environment=MATRIX_WEBHOOK_BRIDGE_URL=http://localhost:5001
