@@ -11,7 +11,7 @@ readme = "README.md"
 license = { text = "MIT" }
 
 [project.scripts]
-matrix-webhook-bridge = "matrix_webhook_bridge.__main__:main"
+matrix-webhook-bridge = "matrix_webhook_bridge.cli:main"
 
 [tool.ruff]
 target-version = "py313"
