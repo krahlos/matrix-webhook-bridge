@@ -1,0 +1,13 @@
+---
+# Optional: adds Alertmanager as a sender.
+# Drop this file alongside docker-compose.yml and add the token:
+#   echo "your_alertmanager_as_token" > secrets/alertmanager_as_token.txt
+
+services:
+  bridge:
+    secrets:
+      - alertmanager_as_token.txt
+
+secrets:
+  alertmanager_as_token.txt:
+    file: ./secrets/alertmanager_as_token.txt

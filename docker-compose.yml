@@ -1,0 +1,24 @@
+---
+
+# Docker Compose configuration for the Matrix Webhook Bridge
+
+services:
+  bridge:
+    image: ghcr.io/krahlos/matrix-webhook-bridge:${VERSION:?VERSION is required (e.g. v1.0.0)}
+    container_name: matrix-webhook-bridge
+    env_file: .env
+    restart: unless-stopped
+    ports:
+      - "${PORT:-5001}:${PORT:-5001}"
+    environment:
+      MATRIX_BASE_URL: ${MATRIX_BASE_URL:?MATRIX_BASE_URL is required (e.g. https://matrix.example.com)}
+      MATRIX_ROOM_ID: ${MATRIX_ROOM_ID:?MATRIX_ROOM_ID is required (e.g. !roomid:matrix.example.com)}
+      MATRIX_DOMAIN: ${MATRIX_DOMAIN:?MATRIX_DOMAIN is required (e.g. matrix.example.com)}
+      PORT: ${PORT:-5001}
+      DEFAULT_USER: ${DEFAULT_USER:-bridge}
+    secrets:
+      - bridge_as_token.txt
+
+secrets:
+  bridge_as_token.txt:
+    file: ./secrets/bridge_as_token.txt
