@@ -1,0 +1,29 @@
+---
+
+name: Label Validation
+
+on:
+  pull_request_target:
+    types: [opened, labeled, unlabeled, synchronize]
+
+permissions: {}
+
+jobs:
+  validate-changelog-label:
+    name: Validate Changelog Label
+    runs-on: ubuntu-latest
+    permissions:
+      issues: write
+      pull-requests: write
+    steps:
+      - name: Validate Changelog Label
+        uses: mheap/github-action-required-labels@v5
+        with:
+          mode: exactly
+          count: 1
+          use_regex: true
+          labels: 'changelog:.*'
+          add_comment: true
+          message: >-
+            Label error. Requires {{errorString}} {{count}} of: {{ provided }}.
+            Found: {{ applied }}. A maintainer will add the required label.

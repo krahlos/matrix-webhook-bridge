@@ -1,0 +1,28 @@
+---
+
+name: "Pull Request Size Labeler"
+
+on:
+  pull_request:
+
+jobs:
+  pull-request-size:
+    name: Label the PR size
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    steps:
+      - name: Label PR Size
+        uses: codelytv/pr-size-labeler@v1
+        with:
+          xs_label: "size/XS"
+          s_label: "size/S"
+          m_label: "size/M"
+          l_label: "size/L"
+          xl_label: "size/XL"
+          message_if_xl: >
+            This PR exceeds the recommended size of 1000 lines.
+            Please make sure you are NOT addressing multiple issues with one PR.
+            Note this PR might be rejected due to its size.
