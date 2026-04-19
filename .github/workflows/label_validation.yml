@@ -1,6 +1,9 @@
 ---
+# yamllint disable rule:line-length
 
 name: Label Validation
+run-name: >-
+  Label Validation · PR #${{ github.event.pull_request.number }} · ${{ github.event.pull_request.title }}
 
 on:
   pull_request_target:

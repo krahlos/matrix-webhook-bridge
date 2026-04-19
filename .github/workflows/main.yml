@@ -1,6 +1,7 @@
 ---
 
 name: "Main"
+run-name: "CI · ${{ github.ref_name }} by @${{ github.actor }}"
 
 on:
   push:

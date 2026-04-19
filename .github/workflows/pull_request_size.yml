@@ -1,6 +1,7 @@
 ---
 
 name: "Pull Request Size Labeler"
+run-name: "Size · PR #${{ github.event.pull_request.number }} · ${{ github.event.pull_request.title }}"
 
 on:
   pull_request:
