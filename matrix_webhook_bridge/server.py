@@ -9,19 +9,18 @@ from urllib.parse import parse_qs, urlparse
 
 from .config import Config
 from .formatters import SERVICES, format_generic
-from .matrix import _token, _token_path, notify
+from .matrix import _SECRETS_DIR, _token, _token_path, notify
 
 logger = logging.getLogger(__name__)
 
 _start_time = time.monotonic()
-_SECRETS_DIR = "/run/secrets"
 _AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
 
 
 def _pre_flight_check(config: Config) -> None:
     logger.info("Performing pre-flight check...")
 
-    default_user_token_path = os.path.join(_SECRETS_DIR, f"{config.default_user}_as_token.txt")
+    default_user_token_path = _token_path(config.default_user)
     if not os.path.isfile(default_user_token_path):
         raise RuntimeError(
             f"Required secret not found: {default_user_token_path}. "

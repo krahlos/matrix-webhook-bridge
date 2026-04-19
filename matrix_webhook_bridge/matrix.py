@@ -8,8 +8,11 @@ from urllib.request import Request, urlopen
 logger = logging.getLogger(__name__)
 
 
-def _token_path(service: str) -> str:
-    return f"/run/secrets/{service}_as_token.txt"
+_SECRETS_DIR = "/run/secrets"
+
+
+def _token_path(user: str) -> str:
+    return f"{_SECRETS_DIR}/{user}_as_token.txt"
 
 
 @lru_cache
@@ -17,7 +20,9 @@ def _token(path: str) -> str:
     return open(path).read().strip()
 
 
-def notify(base_url: str, room_id: str, plain: str, html: str, token_file: str, user_id: str) -> None:
+def notify(
+    base_url: str, room_id: str, plain: str, html: str, token_file: str, user_id: str
+) -> None:
     """Send a message to the Matrix room."""
     txn = int(time.time() * 1000)
     url = (

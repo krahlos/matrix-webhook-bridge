@@ -8,6 +8,7 @@ from matrix_webhook_bridge.server import _pre_flight_check
 
 @pytest.fixture
 def secrets_dir(tmp_path, monkeypatch):
+    monkeypatch.setattr("matrix_webhook_bridge.matrix._SECRETS_DIR", str(tmp_path))
     monkeypatch.setattr("matrix_webhook_bridge.server._SECRETS_DIR", str(tmp_path))
     return tmp_path
 
