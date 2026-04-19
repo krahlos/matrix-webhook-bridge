@@ -21,11 +21,12 @@ _AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
 def _pre_flight_check(config: Config) -> None:
     logger.info("Performing pre-flight check...")
 
-    bridge_token_path = os.path.join(_SECRETS_DIR, "bridge_as_token.txt")
-    if not os.path.isfile(bridge_token_path):
+    default_user_token_path = os.path.join(_SECRETS_DIR, f"{config.default_user}_as_token.txt")
+    if not os.path.isfile(default_user_token_path):
         raise RuntimeError(
-            f"Required secret not found: {bridge_token_path}. "
-            "Cannot start server without bridge appservice token."
+            f"Required secret not found: {default_user_token_path}. "
+            f"Cannot start server without appservice token for default user "
+            f"'{config.default_user}'."
         )
 
     available_tokens: list[str] = []
