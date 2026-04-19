@@ -17,6 +17,10 @@ Application Service token._
 > [!WARNING]
 > This project is in early development and should only be used internally.
 
+## Setup
+
+See [INSTALL.md](INSTALL.md) for adding senders, health checks, and configuration reference.
+
 ## Sending messages
 
 Any HTTP client can post to `/notify`:
