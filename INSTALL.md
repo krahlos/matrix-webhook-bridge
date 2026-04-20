@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/
 Edit `.env` with your Matrix homeserver URL, target room ID and domain:
 
 ```sh
-VERSION=v0.1.1
+VERSION=v0.1.2
 
 MATRIX_BASE_URL=https://matrix.example.com
 MATRIX_ROOM_ID=!roomid:matrix.example.com
