@@ -56,6 +56,11 @@ CONFIG_SCHEMA = {
                     "default": "bridge",
                     "description": "Fallback Matrix user localpart",
                 },
+                "webhook_secret": {
+                    "type": "string",
+                    "minLength": 1,
+                    "description": "Shared secret for incoming webhook authentication",
+                },
             },
             "additionalProperties": False,
         },
@@ -115,4 +120,5 @@ def load_config_from_yaml(path: str) -> Config:
         matrix_timeout=matrix_section.get("timeout", 5),
         port=server_section.get("port", 5001),
         default_user=server_section.get("default_user", "bridge"),
+        webhook_secret=server_section.get("webhook_secret"),
     )

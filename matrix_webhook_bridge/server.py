@@ -1,3 +1,4 @@
+import hmac
 import json
 import logging
 import os
@@ -97,12 +98,30 @@ def _make_handler(config: Config) -> type:
                 self.send_response(404)
                 self.end_headers()
 
+        def _check_auth(self) -> bool:
+            if not config.webhook_secret:
+                return True
+            auth = self.headers.get("Authorization", "")
+            expected = f"Bearer {config.webhook_secret}"
+            if not hmac.compare_digest(auth, expected):
+                logger.warning(
+                    "Unauthorized request from %s",
+                    self.client_address,
+                )
+                self.send_response(401)
+                self.end_headers()
+                return False
+            return True
+
         def do_POST(self):
             parsed = urlparse(self.path)
             if parsed.path != "/notify":
                 logger.warning(f"POST {self.path} not found from {self.client_address}")
                 self.send_response(404)
                 self.end_headers()
+                return
+
+            if not self._check_auth():
                 return
 
             params = parse_qs(parsed.query)
@@ -137,7 +156,15 @@ def _make_handler(config: Config) -> type:
             failed = False
             for plain, html in format_fn(data):
                 try:
-                    notify(config.base_url, config.room_id, plain, html, _token_path(user), user_id, config.matrix_timeout)
+                    notify(
+                        config.base_url,
+                        config.room_id,
+                        plain,
+                        html,
+                        _token_path(user),
+                        user_id,
+                        config.matrix_timeout,
+                    )
                 except Exception as e:
                     logger.error(
                         "notify failed",

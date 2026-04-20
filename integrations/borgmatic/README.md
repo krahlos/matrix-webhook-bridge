@@ -12,6 +12,9 @@ hostname it ran on.
 
 - `matrix-webhook-bridge` is reachable at `http://localhost:5001` (configurable via
   `MATRIX_WEBHOOK_BRIDGE_URL`).
+- If `server.webhook_secret` is set on the bridge, point `BRIDGE_CONFIG` at the
+  config file so the script reads the secret automatically (requires `pyyaml`).
+  Alternatively, export `WEBHOOK_SECRET` directly.
 - borgmatic is installed and configured on the host.
 
 ## Add a Matrix Application Service

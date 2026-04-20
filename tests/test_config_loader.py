@@ -266,6 +266,49 @@ matrix:
         Path(config_path).unlink()
 
 
+def test_load_config_with_webhook_secret():
+    """webhook_secret is loaded when present."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  webhook_secret: my-secret
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        config = load_config_from_yaml(config_path)
+        assert config.webhook_secret == "my-secret"  # pragma: allowlist secret
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_without_webhook_secret():
+    """webhook_secret defaults to None when omitted."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        config = load_config_from_yaml(config_path)
+        assert config.webhook_secret is None
+    finally:
+        Path(config_path).unlink()
+
+
 def test_load_config_empty_file():
     """ConfigError raised when YAML file is empty."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:

@@ -66,6 +66,30 @@ logging.basicConfig(level=logging.INFO, handlers=[_handler])
 logger = logging.getLogger("crowdsec-notifications")
 
 MATRIX_WEBHOOK_BRIDGE_URL = os.environ.get("MATRIX_WEBHOOK_BRIDGE_URL", "http://localhost:5001")
+BRIDGE_CONFIG = os.environ.get("BRIDGE_CONFIG", "")
+
+
+def _load_webhook_secret() -> str:
+    """Read webhook_secret from the bridge config file.
+
+    Falls back to WEBHOOK_SECRET env var if the config file is not set
+    or pyyaml is not installed.
+    """
+    if BRIDGE_CONFIG:
+        try:
+            import yaml
+
+            with open(BRIDGE_CONFIG) as f:
+                data = yaml.safe_load(f)
+            secret = data.get("server", {}).get("webhook_secret", "")
+            if secret:
+                return secret
+        except Exception as exc:
+            logger.warning("Could not read webhook_secret from %s: %s", BRIDGE_CONFIG, exc)
+    return os.environ.get("WEBHOOK_SECRET", "")
+
+
+WEBHOOK_SECRET = _load_webhook_secret()
 SINCE = os.environ.get("SINCE", "5m")
 
 
@@ -140,10 +164,13 @@ def build_payloads(data: list) -> list[dict]:
 
 def send(payload: dict) -> None:
     data = json.dumps(payload).encode()
+    headers = {"Content-Type": "application/json"}
+    if WEBHOOK_SECRET:
+        headers["Authorization"] = f"Bearer {WEBHOOK_SECRET}"
     req = urllib.request.Request(
         f"{MATRIX_WEBHOOK_BRIDGE_URL}/notify?service=crowdsec",
         data=data,
-        headers={"Content-Type": "application/json"},
+        headers=headers,
         method="POST",
     )
     try:

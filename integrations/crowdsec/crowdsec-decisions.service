@@ -8,3 +8,4 @@ Requires=crowdsec.service
 Type=oneshot
 ExecStart=/etc/crowdsec/notify-decisions.py
 Environment=MATRIX_WEBHOOK_BRIDGE_URL=http://localhost:5001
+Environment=BRIDGE_CONFIG=/path/to/config/bridge.yml

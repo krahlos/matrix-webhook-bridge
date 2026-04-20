@@ -20,3 +20,8 @@ server:
 
   # Fallback Matrix user localpart (default: "bridge")
   default_user: bridge
+
+  # Optional shared secret for incoming webhook authentication.
+  # When set, all POST requests must include an Authorization header:
+  #   Authorization: Bearer <webhook_secret>
+  # webhook_secret: your-secret-here

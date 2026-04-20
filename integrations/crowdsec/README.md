@@ -13,6 +13,9 @@ remediation via `matrix-webhook-bridge`.
 - CrowdSec runs as a Docker container named `crowdsec` on the same host.
 - `matrix-webhook-bridge` is reachable at `http://localhost:5001` (configurable via
   `MATRIX_WEBHOOK_BRIDGE_URL`).
+- If `server.webhook_secret` is set on the bridge, point `BRIDGE_CONFIG` at the
+  config file so the script reads the secret automatically (requires `pyyaml`).
+  Alternatively, export `WEBHOOK_SECRET` directly.
 - The script runs every 5 minutes via a systemd timer and queries decisions from the last
   `5m` (configurable via `SINCE`).
 
