@@ -15,10 +15,36 @@ logger = logging.getLogger(__name__)
 
 _start_time = time.monotonic()
 _AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
+_VALID_LOCALPART_RE = re.compile(r"^[a-z0-9._\-]+$")
+
+
+def _validate_user_localpart(user: str, handler: BaseHTTPRequestHandler) -> bool:
+    """
+    Validate that user is a valid Matrix localpart to prevent path traversal.
+
+    Returns True if valid, False otherwise. If invalid, sends 400 response.
+    """
+    if not _VALID_LOCALPART_RE.match(user):
+        logger.warning(
+            f"Invalid user localpart '{user}' from {handler.client_address}. "
+            f"Must match [a-z0-9._-]+"
+        )
+        handler.send_response(400)
+        handler.send_header("Content-Type", "text/plain")
+        handler.end_headers()
+        handler.wfile.write(b"Invalid user parameter. Must match [a-z0-9._-]+")
+        return False
+    return True
 
 
 def _pre_flight_check(config: Config) -> None:
     logger.info("Performing pre-flight check...")
+
+    if not _VALID_LOCALPART_RE.match(config.default_user):
+        raise RuntimeError(
+            f"Invalid default_user '{config.default_user}'. "
+            f"Must match [a-z0-9._-]+ to prevent path traversal."
+        )
 
     default_user_token_path = _token_path(config.default_user)
     if not os.path.isfile(default_user_token_path):
@@ -82,6 +108,10 @@ def _make_handler(config: Config) -> type:
             params = parse_qs(parsed.query)
             service = params.get("service", [None])[0]
             user = params.get("user", [None])[0] or service or config.default_user
+
+            if not _validate_user_localpart(user, self):
+                return
+
             format_fn = SERVICES.get(service, format_generic)
             user_id = f"@{user}:{config.domain}"
 
