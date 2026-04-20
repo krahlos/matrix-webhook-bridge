@@ -2,6 +2,7 @@ import json
 import logging
 import time
 from functools import lru_cache
+from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
 
@@ -47,6 +48,22 @@ def notify(
         },
     )
     logger.debug(f"Sending Matrix message as {user_id}: {plain}")
-    with urlopen(req) as r:
-        r.read()
+    try:
+        with urlopen(req) as r:
+            r.read()
+    except HTTPError as e:
+        # The JSON body carries the real reason (errcode, error, retry_after_ms).
+        # str(e) is only the status line, so include the body in the log and in
+        # the re-raised exception so callers see it too.
+        try:
+            body = e.read().decode("utf-8", errors="replace")
+        except Exception:  # noqa: BLE001 - best-effort; never let logging crash the send path
+            body = ""
+        logger.error(
+            "Matrix send failed (%s %s): %s",
+            e.code,
+            e.reason,
+            body,
+        )
+        raise HTTPError(e.url, e.code, f"{e.reason}: {body}", e.headers, None) from e
     logger.info(f"Matrix message sent as {user_id}")
