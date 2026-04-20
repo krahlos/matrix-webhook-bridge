@@ -1,10 +1,10 @@
 import json
 import logging
-import time
 from functools import lru_cache
 from urllib.error import HTTPError
 from urllib.parse import quote
 from urllib.request import Request, urlopen
+from uuid import uuid4
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +25,7 @@ def notify(
     base_url: str, room_id: str, plain: str, html: str, token_file: str, user_id: str, timeout: int = 5
 ) -> None:
     """Send a message to the Matrix room."""
-    txn = int(time.time() * 1000)
+    txn = uuid4().hex
     url = (
         f"{base_url}/_matrix/client/v3/rooms/{quote(room_id, safe='')}"
         f"/send/m.room.message/{txn}?user_id={quote(user_id, safe='')}"
