@@ -4,21 +4,16 @@
 
 services:
   bridge:
-    image: ghcr.io/krahlos/matrix-webhook-bridge:${VERSION:?VERSION is required (e.g. v1.0.0)}
+    image: ghcr.io/krahlos/matrix-webhook-bridge:v0.1.2
     container_name: matrix-webhook-bridge
-    env_file: .env
     restart: unless-stopped
     ports:
-      - "${PORT:-5001}:${PORT:-5001}"
-    environment:
-      MATRIX_BASE_URL: ${MATRIX_BASE_URL:?MATRIX_BASE_URL is required (e.g. https://matrix.example.com)}
-      MATRIX_ROOM_ID: ${MATRIX_ROOM_ID:?MATRIX_ROOM_ID is required (e.g. !roomid:matrix.example.com)}
-      MATRIX_DOMAIN: ${MATRIX_DOMAIN:?MATRIX_DOMAIN is required (e.g. matrix.example.com)}
-      MATRIX_TIMEOUT: ${MATRIX_TIMEOUT:-5}
-      PORT: ${PORT:-5001}
-      DEFAULT_USER: ${DEFAULT_USER:-bridge}
+      - "5001:5001"
+    volumes:
+      - ./config/bridge.yml:/etc/matrix-webhook-bridge/config.yml:ro
     secrets:
       - bridge_as_token.txt
+    command: ["matrix-webhook-bridge", "serve", "--config", "/etc/matrix-webhook-bridge/config.yml"]
 
 secrets:
   bridge_as_token.txt:

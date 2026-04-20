@@ -2,7 +2,6 @@
 
 import argparse
 import json
-import os
 import sys
 from urllib.request import Request, urlopen
 
@@ -10,38 +9,26 @@ _DEFAULT_MESSAGE = "👾 Hello, World! Sent via webhook!"
 
 
 def _cmd_serve(args: argparse.Namespace) -> None:
-    missing = [
-        flag
-        for flag, val in [
-            ("--base-url / MATRIX_BASE_URL", args.base_url),
-            ("--room-id / MATRIX_ROOM_ID", args.room_id),
-            ("--domain / MATRIX_DOMAIN", args.domain),
-        ]
-        if not val
-    ]
-    if missing:
-        print(f"error: missing required arguments: {', '.join(missing)}", file=sys.stderr)
-        sys.exit(1)
-
-    from .config import Config
+    from .config_loader import ConfigError, load_config_from_yaml
     from .log import setup_logging
     from .server import run_server
 
     setup_logging()
-    run_server(
-        Config(
-            base_url=args.base_url,
-            room_id=args.room_id,
-            domain=args.domain,
-            port=args.port,
-            default_user=args.default_user,
-            matrix_timeout=args.matrix_timeout,
-        )
-    )
+
+    try:
+        config = load_config_from_yaml(args.config)
+    except FileNotFoundError:
+        print(f"error: configuration file not found: {args.config}", file=sys.stderr)
+        sys.exit(1)
+    except ConfigError as e:
+        print(f"error: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    run_server(config)
 
 
 def _cmd_healthcheck(args: argparse.Namespace) -> None:
-    port = args.port or int(os.environ.get("PORT", 5001))
+    port = args.port or 5001
     try:
         urlopen(f"http://localhost:{port}/healthy")
     except Exception:
@@ -71,41 +58,11 @@ def main() -> None:
     # serve
     serve = sub.add_parser("serve", help="Start the webhook bridge server")
     serve.add_argument(
-        "--base-url",
-        default=os.environ.get("MATRIX_BASE_URL"),
-        metavar="URL",
-        help="Matrix homeserver URL [env: MATRIX_BASE_URL]",
-    )
-    serve.add_argument(
-        "--room-id",
-        default=os.environ.get("MATRIX_ROOM_ID"),
-        metavar="ID",
-        help="Target Matrix room ID [env: MATRIX_ROOM_ID]",
-    )
-    serve.add_argument(
-        "--domain",
-        default=os.environ.get("MATRIX_DOMAIN"),
-        metavar="DOMAIN",
-        help="Matrix homeserver domain [env: MATRIX_DOMAIN]",
-    )
-    serve.add_argument(
-        "--port",
-        type=int,
-        default=int(os.environ.get("PORT", 5001)),
-        help="Port to listen on [env: PORT] (default: 5001)",
-    )
-    serve.add_argument(
-        "--default-user",
-        default=os.environ.get("DEFAULT_USER", "bridge"),
-        metavar="USER",
-        help="Fallback Matrix user localpart [env: DEFAULT_USER] (default: bridge)",
-    )
-    serve.add_argument(
-        "--matrix-timeout",
-        type=int,
-        default=int(os.environ.get("MATRIX_TIMEOUT", 5)),
-        metavar="SECONDS",
-        help="Timeout for Matrix API requests in seconds [env: MATRIX_TIMEOUT] (default: 5)",
+        "--config",
+        "-c",
+        required=True,
+        metavar="PATH",
+        help="Path to YAML configuration file",
     )
 
     # healthcheck

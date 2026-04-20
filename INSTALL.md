@@ -2,7 +2,7 @@
 
 ## Quick start
 
-Run the installer to download `docker-compose.yml` and create an `.env` from the example:
+Run the installer to download `docker-compose.yml` and create a `config/bridge.yml` from the example:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/install.sh | sh
@@ -10,15 +10,18 @@ curl -fsSL https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/
 
 ### Configure
 
-Edit `.env` with your Matrix homeserver URL, target room ID and domain:
+Edit `config/bridge.yml` with your Matrix homeserver details:
 
-```sh
-VERSION=v0.1.2
+```yaml
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!roomid:matrix.example.com"
+  domain: matrix.example.com
+  timeout: 5
 
-MATRIX_BASE_URL=https://matrix.example.com
-MATRIX_ROOM_ID=!roomid:matrix.example.com
-MATRIX_DOMAIN=matrix.example.com
-MATRIX_TIMEOUT=5
+server:
+  port: 5001
+  default_user: bridge
 ```
 
 ### Add the Application Service token
@@ -47,14 +50,26 @@ docker compose exec bridge matrix-webhook-bridge healthcheck
 
 ## Configuration reference
 
-| Variable          | CLI flag            | Required | Default  | Description                                    |
-| ----------------- | ------------------- | -------- | -------- | ---------------------------------------------- |
-| `MATRIX_BASE_URL` | `--base-url`        | yes      | —        | Matrix homeserver URL                          |
-| `MATRIX_ROOM_ID`  | `--room-id`         | yes      | —        | Target room ID                                 |
-| `MATRIX_DOMAIN`   | `--domain`          | yes      | —        | Homeserver domain                              |
-| `MATRIX_TIMEOUT`  | `--matrix-timeout`  | no       | `5`      | Timeout for Matrix API requests (seconds)      |
-| `PORT`            | `--port`            | no       | `5001`   | Port to listen on                              |
-| `DEFAULT_USER`    | `--default-user`    | no       | `bridge` | Fallback sender when no `user` param is given  |
+All configuration is defined in the YAML configuration file (default: `config/bridge.yml`).
+
+| YAML Path             | Required | Default  | Description                                    |
+| --------------------- | -------- | -------- | ---------------------------------------------- |
+| `matrix.base_url`     | yes      | —        | Matrix homeserver URL                          |
+| `matrix.room_id`      | yes      | —        | Target room ID                                 |
+| `matrix.domain`       | yes      | —        | Homeserver domain                              |
+| `matrix.timeout`      | no       | `5`      | Timeout for Matrix API requests (seconds)      |
+| `server.port`         | no       | `5001`   | Port to listen on (see note below)             |
+| `server.default_user` | no       | `bridge` | Fallback sender when no `user` param is given  |
+
+> [!TIP]
+> When running with Docker, keep `server.port` at `5001` and remap the
+> host port in `docker-compose.yml` (e.g. `"8080:5001"`).
+
+### CLI Usage
+
+```sh
+matrix-webhook-bridge serve --config /path/to/config.yml
+```
 
 ## Alertmanager
 

@@ -30,7 +30,6 @@ COPY --from=build /venv /venv
 ENV PATH="/venv/bin:$PATH"
 # Flush stdout/stderr immediately so JSON logs reach the container runtime
 ENV PYTHONUNBUFFERED=1
-# Default port — override with -e PORT=...
 ENV PORT=5001
 
 # Secrets are expected at /run/secrets/<user>_as_token.txt
@@ -44,4 +43,4 @@ EXPOSE 5001
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
     CMD ["matrix-webhook-bridge", "healthcheck"]
 
-CMD ["matrix-webhook-bridge", "serve"]
+CMD ["matrix-webhook-bridge", "serve", "--config", "/etc/matrix-webhook-bridge/config.yml"]

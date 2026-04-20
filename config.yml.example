@@ -1,0 +1,22 @@
+---
+# Matrix Webhook Bridge Configuration
+
+matrix:
+  # Base URL of the Matrix homeserver (required)
+  base_url: https://matrix.example.com
+
+  # Target room ID for webhook notifications (required)
+  room_id: "!roomid:matrix.example.com"
+
+  # Matrix homeserver domain (required)
+  domain: matrix.example.com
+
+  # Timeout for Matrix API requests in seconds (default: 5)
+  timeout: 5
+
+server:
+  # Port to listen on (default: 5001)
+  port: 5001
+
+  # Fallback Matrix user localpart (default: "bridge")
+  default_user: bridge

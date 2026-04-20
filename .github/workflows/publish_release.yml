@@ -56,8 +56,11 @@ jobs:
           VERSION: ${{ inputs.version }}
         run: |
           VERSION_NO_V="${VERSION#v}"
+          IMAGE_NAME="ghcr.io/krahlos/matrix-webhook-bridge"
           sed -i "s/^version = .*/version = \"${VERSION_NO_V}\"/" pyproject.toml
-          sed -i "s/^VERSION=.*/VERSION=${VERSION}/" .env.example
+          sed -i \
+            "s|${IMAGE_NAME}:v[0-9]*\.[0-9]*\.[0-9]*|${IMAGE_NAME}:${VERSION}|" \
+            docker-compose.yml
           sed -i "s/VERSION=v[0-9]*\.[0-9]*\.[0-9]*/VERSION=${VERSION}/g" INSTALL.md
 
       - name: Commit and tag
@@ -65,7 +68,7 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
-          git add pyproject.toml .env.example INSTALL.md
+          git add pyproject.toml docker-compose.yml INSTALL.md
           git commit -m "bump version to ${VERSION}"
           git tag "${VERSION}"
           git push origin main

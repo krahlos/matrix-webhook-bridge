@@ -9,6 +9,10 @@ description = "A webhook-to-Matrix notification bridge with per-sender bot users
 requires-python = ">=3.11"
 readme = "README.md"
 license = { text = "MIT" }
+dependencies = [
+    "jsonschema>=4.0,<5.0",
+    "pyyaml>=6.0,<7.0",
+]
 
 [project.scripts]
 matrix-webhook-bridge = "matrix_webhook_bridge.cli:main"
