@@ -8,12 +8,14 @@ import signal
 import threading
 import time
 from contextlib import asynccontextmanager
+from uuid import uuid4
 
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Request
 
 from .config import Config
 from .formatters import SERVICES, format_generic
+from .log import request_id as _request_id
 from .matrix import _SECRETS_DIR, _token, _token_path
 from .matrix import notify as _matrix_notify
 
@@ -117,6 +119,8 @@ async def notify(
     config: Config = Depends(_get_config),
     _: None = Depends(_check_auth),
 ):
+    _request_id.set(uuid4().hex[:8])
+
     body = await request.body()
     if len(body) > 1_048_576:
         raise HTTPException(status_code=413)

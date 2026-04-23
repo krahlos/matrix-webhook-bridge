@@ -2,6 +2,9 @@ import json
 import logging
 import os
 import time
+from contextvars import ContextVar
+
+request_id: ContextVar[str] = ContextVar("request_id", default="")
 
 _STDLIB_ATTRS = frozenset(
     {
@@ -44,11 +47,21 @@ class _JsonFormatter(logging.Formatter):
         if record.exc_info:
             entry["exc"] = self.formatException(record.exc_info)
         extra = {
-            k: v for k, v in record.__dict__.items() if k not in _STDLIB_ATTRS and not k.startswith("_")
+            k: v
+            for k, v in record.__dict__.items()
+            if k not in _STDLIB_ATTRS and not k.startswith("_")
         }
         if extra:
             entry.update(extra)
         return json.dumps(entry, default=str)
+
+
+class _RequestIdFilter(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        rid = request_id.get()
+        if rid:
+            record.request_id = rid
+        return True
 
 
 def setup_logging() -> None:
@@ -56,4 +69,5 @@ def setup_logging() -> None:
     log_level = logging.DEBUG if debug else logging.INFO
     handler = logging.StreamHandler()
     handler.setFormatter(_JsonFormatter())
+    handler.addFilter(_RequestIdFilter())
     logging.basicConfig(level=log_level, handlers=[handler])
