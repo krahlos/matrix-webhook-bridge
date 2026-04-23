@@ -10,6 +10,11 @@ on:
         description: "Version to release (vX.Y.Z)"
         required: true
         type: string
+      prerelease:
+        description: "Mark as pre-release"
+        required: false
+        type: boolean
+        default: false
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -133,4 +138,5 @@ jobs:
               tag_name: '${{ inputs.version }}',
               name: '${{ inputs.version }}',
               generate_release_notes: true,
+              prerelease: ${{ inputs.prerelease }},
             });
