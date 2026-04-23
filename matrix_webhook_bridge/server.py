@@ -130,6 +130,10 @@ def _make_handler(config: Config) -> type:
             )
             try:
                 content_length = int(self.headers["Content-Length"])
+                if content_length > 1_048_576:
+                    self.send_response(413)
+                    self.end_headers()
+                    return
                 raw_data = self.rfile.read(content_length)
                 data = json.loads(raw_data)
                 logger.debug(f"Received data: {data}")
