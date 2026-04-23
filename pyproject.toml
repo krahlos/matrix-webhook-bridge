@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "matrix-webhook-bridge"
-version = "0.1.2"
+version = "0.2.0"
 description = "A webhook-to-Matrix notification bridge with per-sender bot users"
 requires-python = ">=3.11"
 readme = "README.md"
