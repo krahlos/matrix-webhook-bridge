@@ -53,6 +53,20 @@ The sender (Matrix user localpart and token) is determined server-side: the `ser
 in `bridge.yml` maps each service name to its user localpart. If the service is not listed,
 `default_user` is used.
 
+## Authorization Header
+
+Set `webhook_secret` in `bridge.yml` to require a shared secret on every `/notify` request:
+
+```sh
+curl -X POST "http://localhost:5001/notify" \
+     -H "Authorization: Bearer <your-secret>" \
+     -H "Content-Type: application/json" \
+     -d '{"body": "Hello"}'
+```
+
+Requests with a missing or wrong token are rejected with `401`. The `/healthy` endpoint is always
+unauthenticated. If `webhook_secret` is unset, all requests are accepted without a token.
+
 ## Built-in formatters
 
 | Service                  | `?service=` value | Description                                              |
