@@ -48,10 +48,32 @@ curl -X POST "http://localhost:5001/notify?service=alertmanager" \
 | Parameter | Description                                                                            |
 | --------- | -------------------------------------------------------------------------------------- |
 | `service` | Activates a built-in formatter and selects the sender via `service_users` in config    |
+| `room`    | Sends to this Matrix room ID, overriding any server-side routing                       |
 
 The sender (Matrix user localpart and token) is determined server-side: the `service_users` map
 in `bridge.yml` maps each service name to its user localpart. If the service is not listed,
 `default_user` is used.
+
+## Multi-room routing
+
+By default all messages go to the global `room_id` in `bridge.yml`. You can route per service
+by adding a `service_rooms` map under `server:`:
+
+```yaml
+server:
+  service_rooms:
+    alertmanager:
+      - "!abc123:matrix.example.org"
+      - "!def456:matrix.example.org"
+    borgmatic:
+      - "!abc123:matrix.example.org"
+```
+
+Room resolution order (first match wins):
+
+1. `?room=<id>` — message is sent to exactly this one room, ignoring any config
+2. `service_rooms[service]` — message is sent to all rooms listed for the service
+3. `matrix.room_id` — fallback, single room
 
 ## Built-in formatters
 

@@ -354,6 +354,107 @@ matrix:
         Path(config_path).unlink()
 
 
+def test_load_config_with_service_rooms():
+    """service_rooms mapping is loaded when present."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  service_rooms:
+    alertmanager:
+      - "!abc123:matrix.example.org"
+      - "!def456:matrix.example.org"
+    borgmatic:
+      - "!abc123:matrix.example.org"
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        config = load_config_from_yaml(config_path)
+        assert config.service_rooms == {
+            "alertmanager": ["!abc123:matrix.example.org", "!def456:matrix.example.org"],
+            "borgmatic": ["!abc123:matrix.example.org"],
+        }
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_service_rooms_defaults_to_empty():
+    """service_rooms defaults to empty dict when omitted."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        config = load_config_from_yaml(config_path)
+        assert config.service_rooms == {}
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_service_rooms_rejects_bad_room_id():
+    """ConfigError raised when a room ID in service_rooms has invalid format."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  service_rooms:
+    alertmanager:
+      - "not-a-room-id"
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        with pytest.raises(ConfigError):
+            load_config_from_yaml(config_path)
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_service_rooms_rejects_invalid_service_name():
+    """ConfigError raised when a service_rooms key has an invalid name."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  service_rooms:
+    "Invalid Service Name":
+      - "!abc123:matrix.example.org"
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        with pytest.raises(ConfigError):
+            load_config_from_yaml(config_path)
+    finally:
+        Path(config_path).unlink()
+
+
 def test_load_config_empty_file():
     """ConfigError raised when YAML file is empty."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:

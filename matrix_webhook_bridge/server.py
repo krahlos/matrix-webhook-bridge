@@ -25,6 +25,7 @@ logger = logging.getLogger(__name__)
 _start_time = time.monotonic()
 _AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
 _VALID_LOCALPART_RE = re.compile(r"^[a-z0-9._\-]+$")
+_VALID_ROOM_ID_RE = re.compile(r"^![^:]+:.+$")
 
 
 def _pre_flight_check(config: Config) -> None:
@@ -42,6 +43,14 @@ def _pre_flight_check(config: Config) -> None:
                 f"Invalid user '{user}' for service '{svc}' in service_users. "
                 f"Must match [a-z0-9._-]+ to prevent path traversal."
             )
+
+    for svc, rooms in config.service_rooms.items():
+        for room_id in rooms:
+            if not _VALID_ROOM_ID_RE.match(room_id):
+                raise RuntimeError(
+                    f"Invalid room_id '{room_id}' for service '{svc}' in service_rooms. "
+                    f"Must match ^![^:]+:.+$ format."
+                )
 
     default_user_token_path = _token_path(config.default_user)
     if not os.path.isfile(default_user_token_path):
@@ -68,6 +77,18 @@ def _pre_flight_check(config: Config) -> None:
             )
 
     logger.info("Available appservice tokens: %s", ", ".join(available_tokens))
+
+
+def resolve_rooms(
+    service: str | None,
+    room_param: str | None,
+    config: Config,
+) -> list[str]:
+    if room_param:
+        return [room_param]
+    if service and config.service_rooms.get(service):
+        return config.service_rooms[service]
+    return [config.room_id]
 
 
 def _format_uptime(seconds: int) -> str:
@@ -129,6 +150,7 @@ async def healthy_matrix(config: Config = Depends(_get_config)):
 async def notify(
     request: Request,
     service: str | None = None,
+    room: str | None = None,
     config: Config = Depends(_get_config),
     _: None = Depends(_check_auth),
 ):
@@ -156,25 +178,27 @@ async def notify(
         },
     )
 
+    rooms = resolve_rooms(service, room, config)
     failed = False
     for plain, html in format_fn(data):
-        try:
-            await asyncio.to_thread(
-                _matrix_notify,
-                config.base_url,
-                config.room_id,
-                plain,
-                html,
-                _token_path(user),
-                user_id,
-                config.matrix_timeout,
-            )
-        except Exception as e:
-            logger.error(
-                "notify failed",
-                extra={"service": service, "user": user, "error": str(e)},
-            )
-            failed = True
+        for room_id in rooms:
+            try:
+                await asyncio.to_thread(
+                    _matrix_notify,
+                    config.base_url,
+                    room_id,
+                    plain,
+                    html,
+                    _token_path(user),
+                    user_id,
+                    config.matrix_timeout,
+                )
+            except Exception as e:
+                logger.error(
+                    "notify failed",
+                    extra={"service": service, "user": user, "room": room_id, "error": str(e)},
+                )
+                failed = True
 
     if failed:
         raise HTTPException(status_code=500)
