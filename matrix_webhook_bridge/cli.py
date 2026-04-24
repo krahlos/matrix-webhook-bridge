@@ -31,7 +31,7 @@ def _cmd_serve(args: argparse.Namespace) -> None:
 def _cmd_healthcheck(args: argparse.Namespace) -> None:
     port = args.port or int(os.environ.get("PORT", 5001))
     try:
-        urlopen(f"http://localhost:{port}/healthy")
+        urlopen(f"http://localhost:{port}/healthy")  # nosec B310  # localhost only
     except Exception:
         sys.exit(1)
 
@@ -41,7 +41,7 @@ def _cmd_say_hello(args: argparse.Namespace) -> None:
     body = json.dumps({"body": args.message}).encode()
     req = Request(url, data=body, method="POST", headers={"Content-Type": "application/json"})
     try:
-        with urlopen(req) as r:
+        with urlopen(req) as r:  # nosec B310  # URL is user-supplied CLI arg
             r.read()
         print(f"Sent as {args.user}.")
     except Exception as e:

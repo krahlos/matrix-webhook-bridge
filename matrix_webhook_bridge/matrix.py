@@ -83,7 +83,7 @@ def join_room(
             },
         )
         logger.debug("Joining room %s as %s", room_id, user_id)
-        with urlopen(req, timeout=timeout) as r:
+        with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
             r.read()
         logger.info("Joined room %s as %s", room_id, user_id)
 
@@ -94,7 +94,7 @@ def probe(base_url: str, timeout: int = 5) -> None:
     """GET /_matrix/client/versions to check homeserver reachability."""
     url = f"{base_url}{VERSIONS_PATH}"
     req = Request(url, method="GET")
-    with urlopen(req, timeout=timeout) as r:
+    with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
         r.read()
 
 
@@ -133,7 +133,7 @@ def notify(
             },
         )
         logger.debug("Sending Matrix message as %s: %s", user_id, plain)
-        with urlopen(req, timeout=timeout) as r:
+        with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
             r.read()
         logger.info("Matrix message sent as %s", user_id)
 

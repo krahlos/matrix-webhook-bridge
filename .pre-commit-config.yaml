@@ -25,6 +25,14 @@ repos:
           - --indent=2
           - --no-ensure-ascii
       - id: trailing-whitespace
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.15.0
+    hooks:
+      - id: mypy
+        files: ^matrix_webhook_bridge/
+        additional_dependencies:
+          - types-PyYAML
+          - types-jsonschema
   - repo: https://github.com/adrienverge/yamllint.git
     rev: v1.29.0
     hooks:
@@ -52,6 +60,15 @@ repos:
     rev: v0.10.0
     hooks:
       - id: shellcheck
+  - repo: https://github.com/PyCQA/bandit
+    rev: 1.8.3
+    hooks:
+      - id: bandit
+        args: ["-c", "pyproject.toml"]
+  - repo: https://github.com/pypa/pip-audit
+    rev: v2.8.0
+    hooks:
+      - id: pip-audit
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
     hooks:

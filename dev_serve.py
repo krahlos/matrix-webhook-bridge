@@ -4,7 +4,6 @@ Usage:
     uv run python dev_serve.py serve --config bridge.yml.example
 """
 
-import sys
 from pathlib import Path
 
 # Patch before any bridge module uses the value
@@ -25,4 +24,4 @@ if not default_user_token_path.is_file():
 
 from matrix_webhook_bridge.cli import main  # noqa: E402
 
-sys.exit(main())
+main()

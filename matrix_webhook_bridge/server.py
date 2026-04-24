@@ -9,6 +9,7 @@ import threading
 import time
 from contextlib import asynccontextmanager
 from importlib.metadata import version
+from typing import cast
 from uuid import uuid4
 
 import uvicorn
@@ -100,9 +101,9 @@ def _autojoin_all(config: Config) -> None:
         user = config.service_users.get(svc, config.default_user)
         users_rooms.setdefault(user, set()).update(rooms)
 
-    for user, rooms in users_rooms.items():
+    for user, room_set in users_rooms.items():
         user_id = f"@{user}:{config.domain}"
-        for room_id in sorted(rooms):
+        for room_id in sorted(room_set):
             try:
                 _join_room(
                     config.base_url,
@@ -145,10 +146,12 @@ async def _lifespan(app: FastAPI):
         await asyncio.to_thread(_autojoin_all, config)
     if threading.current_thread() is threading.main_thread():
         loop = asyncio.get_running_loop()
-        loop.add_signal_handler(
-            signal.SIGHUP,
-            lambda: (_token.cache_clear(), logger.info("Token cache cleared via SIGHUP")),
-        )
+
+        def _clear_token_cache() -> None:
+            _token.cache_clear()
+            logger.info("Token cache cleared via SIGHUP")
+
+        loop.add_signal_handler(signal.SIGHUP, _clear_token_cache)
     yield
 
 
@@ -167,7 +170,7 @@ app.mount("/metrics", make_asgi_app())
 
 
 def _get_config(request: Request) -> Config:
-    return request.app.state.config
+    return cast(Config, request.app.state.config)
 
 
 def _check_auth(
@@ -252,7 +255,7 @@ async def notify(
 
     user = config.service_users.get(service) if service else None
     user = user or config.default_user
-    format_fn = SERVICES.get(service, format_generic)
+    format_fn = SERVICES.get(service, format_generic) if service else format_generic
     user_id = f"@{user}:{config.domain}"
 
     logger.info(
