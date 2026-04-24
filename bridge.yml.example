@@ -32,3 +32,13 @@ server:
   #   alertmanager: alertmanager
   #   borgmatic: borgmatic
   #   crowdsec: crowdsec
+
+  # Map each ?service= value to one or more Matrix room IDs.
+  # If a service is not listed here, matrix.room_id is used.
+  # Callers can also pass ?room=!id:domain to target a specific room per request.
+  # service_rooms:
+  #   alertmanager:
+  #     - "!abc123:matrix.example.org"
+  #     - "!def456:matrix.example.org"
+  #   borgmatic:
+  #     - "!abc123:matrix.example.org"
