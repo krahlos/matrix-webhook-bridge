@@ -12,3 +12,4 @@ class Config:
     webhook_secret: str | None = None
     service_users: dict[str, str] = field(default_factory=dict)
     service_rooms: dict[str, list[str]] = field(default_factory=dict)
+    autojoin: bool = False

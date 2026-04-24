@@ -38,6 +38,11 @@ CONFIG_SCHEMA = {
                     "default": 5,
                     "description": "Timeout for Matrix API requests in seconds",
                 },
+                "autojoin": {
+                    "type": "boolean",
+                    "default": False,
+                    "description": "Join all configured rooms at startup",
+                },
             },
             "additionalProperties": False,
         },
@@ -139,4 +144,5 @@ def load_config_from_yaml(path: str) -> Config:
         webhook_secret=server_section.get("webhook_secret"),
         service_users=server_section.get("service_users", {}),
         service_rooms=server_section.get("service_rooms", {}),
+        autojoin=matrix_section.get("autojoin", False),
     )

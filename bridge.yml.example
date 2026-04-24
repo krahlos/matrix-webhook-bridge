@@ -14,6 +14,9 @@ matrix:
   # Timeout for Matrix API requests in seconds (default: 5)
   timeout: 5
 
+  # Automatically join all configured rooms at startup (default: false)
+  # autojoin: false
+
 server:
   # Port to listen on (default: 5001)
   port: 5001

@@ -20,6 +20,7 @@ from .config import Config
 from .formatters import SERVICES, format_generic
 from .log import request_id as _request_id
 from .matrix import _SECRETS_DIR, _token, _token_path
+from .matrix import join_room as _join_room
 from .matrix import notify as _matrix_notify
 from .matrix import probe as _matrix_probe
 
@@ -93,6 +94,30 @@ def _pre_flight_check(config: Config) -> None:
     logger.info("Available appservice tokens: %s", ", ".join(available_tokens))
 
 
+def _autojoin_all(config: Config) -> None:
+    users_rooms: dict[str, set[str]] = {config.default_user: {config.room_id}}
+    for svc, rooms in config.service_rooms.items():
+        user = config.service_users.get(svc, config.default_user)
+        users_rooms.setdefault(user, set()).update(rooms)
+
+    for user, rooms in users_rooms.items():
+        user_id = f"@{user}:{config.domain}"
+        for room_id in sorted(rooms):
+            try:
+                _join_room(
+                    config.base_url,
+                    room_id,
+                    _token_path(user),
+                    user_id,
+                    config.matrix_timeout,
+                )
+            except Exception as e:
+                logger.error(
+                    "autojoin failed",
+                    extra={"user": user, "room": room_id, "error": str(e)},
+                )
+
+
 def resolve_rooms(
     service: str | None,
     room_param: str | None,
@@ -114,7 +139,10 @@ def _format_uptime(seconds: int) -> str:
 
 @asynccontextmanager
 async def _lifespan(app: FastAPI):
-    _pre_flight_check(app.state.config)
+    config = app.state.config
+    _pre_flight_check(config)
+    if config.autojoin:
+        await asyncio.to_thread(_autojoin_all, config)
     if threading.current_thread() is threading.main_thread():
         loop = asyncio.get_running_loop()
         loop.add_signal_handler(

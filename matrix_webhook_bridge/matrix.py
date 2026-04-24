@@ -59,6 +59,37 @@ def _with_retry(fn):
         time.sleep(delay)
 
 
+def join_room(
+    base_url: str,
+    room_id: str,
+    token_file: str,
+    user_id: str,
+    timeout: int = 5,
+) -> None:
+    """Join a Matrix room as user_id."""
+    url = (
+        f"{base_url}/_matrix/client/v3/join/{quote(room_id, safe='')}"
+        f"?user_id={quote(user_id, safe='')}"
+    )
+
+    def attempt():
+        req = Request(
+            url,
+            data=b"{}",
+            method="POST",
+            headers={
+                "Authorization": f"Bearer {_token(token_file)}",
+                "Content-Type": "application/json",
+            },
+        )
+        logger.debug("Joining room %s as %s", room_id, user_id)
+        with urlopen(req, timeout=timeout) as r:
+            r.read()
+        logger.info("Joined room %s as %s", room_id, user_id)
+
+    _with_retry(attempt)
+
+
 def probe(base_url: str, timeout: int = 5) -> None:
     """GET /_matrix/client/versions to check homeserver reachability."""
     url = f"{base_url}{VERSIONS_PATH}"
