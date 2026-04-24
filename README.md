@@ -15,17 +15,20 @@ Application Service token._
 
 ---
 
-> [!WARNING]
-> This project is in early development and should only be used internally.
+## Requirements
 
-## Setup
+- A running Matrix homeserver (Synapse) with Application Service support
+- Docker and Docker Compose
 
-See [INSTALL.md](INSTALL.md) for health checks and configuration reference.
+## Quick start
 
-See [MATRIX.md](MATRIX.md) for setting up the Matrix Application Service and inviting the AS bot
-user to the room.
+```sh
+curl -fsSL https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/install.sh | sh
+docker compose up -d
+```
 
-Ready-to-use scripts for borgmatic, CrowdSec, and other tools are in [`integrations/`](integrations/).
+See [INSTALL.md](INSTALL.md) for full configuration reference and health checks.
+See [MATRIX.md](MATRIX.md) for registering the Application Service with Synapse.
 
 ## Sending messages
 
@@ -95,11 +98,17 @@ The bridge derives the set of (user, room) pairs from the config:
 Joining a room the bot is already in is a no-op. A failed join is logged as an error but does not
 prevent the bridge from starting.
 
-## Built-in formatters
+## Integrations
 
-| Service                  | `?service=` value | Description                                              |
-| ------------------------ | ----------------- | -------------------------------------------------------- |
-| Prometheus Alertmanager  | `alertmanager`    | Colour-coded alerts with severity, description and links |
+The bridge ships a built-in formatter for Alertmanager and ready-to-use notification scripts for
+other tools in [`integrations/`](integrations/).
+
+| Tool                    | Type              | `?service=` value  | Description                                               |
+| ----------------------- | ----------------- | ------------------ | --------------------------------------------------------- |
+| Prometheus Alertmanager | built-in          | `alertmanager`     | Colour-coded alerts with severity, description and links  |
+| borgmatic               | standalone script | —                  | Backup job success/failure notifications                  |
+| CrowdSec                | standalone script | —                  | Per-decision ban/unban alerts                             |
+| CrowdSec summary        | standalone script | —                  | Daily digest of top attackers and blocked IPs             |
 
 ## Metrics
 
