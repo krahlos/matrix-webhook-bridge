@@ -93,5 +93,24 @@ Clients must then include the header:
 Authorization: Bearer my-secret-token
 ```
 
+Alternatively, provide the secret via a Docker secret mounted at `/run/secrets/webhook_secret`.
+This takes precedence over the config value:
+
+```shell
+echo "my-secret-token" > secrets/webhook_secret.txt
+```
+
+```yaml
+# docker-compose.yml
+secrets:
+  webhook_secret:
+    file: ./secrets/webhook_secret.txt
+
+services:
+  bridge:
+    secrets:
+      - webhook_secret
+```
+
 Requests with a missing or incorrect token receive `401 Unauthorized`.
 The health-check endpoint (`GET /healthy`) is never authenticated.

@@ -27,6 +27,8 @@ server:
   # Optional shared secret for incoming webhook authentication.
   # When set, all POST requests must include an Authorization header:
   #   Authorization: Bearer <webhook_secret>
+  # webhook_secret can also be provided via Docker secret at
+  # /run/secrets/webhook_secret (takes precedence over this value).
   # webhook_secret: your-secret-here
 
   # Map each ?service= value to the Matrix user localpart that should send the message.

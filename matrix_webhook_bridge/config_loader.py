@@ -1,5 +1,6 @@
 """Configuration loader for YAML-based configuration."""
 
+import logging
 from pathlib import Path
 
 import jsonschema
@@ -89,6 +90,10 @@ CONFIG_SCHEMA = {
     "additionalProperties": False,
 }
 
+logger = logging.getLogger(__name__)
+
+_SECRETS_DIR = "/run/secrets"
+
 
 class ConfigError(Exception):
     """Configuration loading or validation error."""
@@ -133,8 +138,8 @@ def load_config_from_yaml(path: str) -> Config:
     matrix_section = data["matrix"]
     server_section = data.get("server", {})
 
-    # Construct and return Config instance
-    return Config(
+    # Construct Config instance
+    config: Config = Config(
         base_url=matrix_section["base_url"],
         room_id=matrix_section["room_id"],
         domain=matrix_section["domain"],
@@ -146,3 +151,23 @@ def load_config_from_yaml(path: str) -> Config:
         service_rooms=server_section.get("service_rooms", {}),
         autojoin=matrix_section.get("autojoin", False),
     )
+
+    # Docker secret takes precedence over config value
+    secret_path = Path(_SECRETS_DIR) / "webhook_secret"
+    if secret_path.is_file():
+        value = secret_path.read_text().strip()
+        if value:
+            if config.webhook_secret:
+                logger.warning(
+                    "Docker secret at %s takes precedence over webhook_secret in config.",
+                    secret_path,
+                )
+            config.webhook_secret = value
+            logger.info("webhook_secret loaded from Docker secret at %s.", secret_path)
+        else:
+            logger.warning(
+                "webhook_secret Docker secret at %s is empty — ignoring, falling back to config.",
+                secret_path,
+            )
+
+    return config
