@@ -1,6 +1,11 @@
 import json
+from typing import Protocol
 
 from .alertmanager import format_alertmanager
+
+
+class Formatter(Protocol):
+    def __call__(self, data: dict) -> list[tuple[str, str]]: ...
 
 
 def format_generic(data: dict) -> list[tuple[str, str]]:
@@ -10,6 +15,6 @@ def format_generic(data: dict) -> list[tuple[str, str]]:
     return [(plain, html)]
 
 
-SERVICES: dict[str, callable] = {
+SERVICES: dict[str, Formatter] = {
     "alertmanager": format_alertmanager,
 }
