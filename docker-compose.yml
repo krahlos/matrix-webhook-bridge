@@ -11,4 +11,4 @@ services:
       - "5001:5001"
     volumes:
       - ./config/bridge.yml:/etc/matrix-webhook-bridge/bridge.yml:ro
-      - ./secrets:/run/secrets:ro
+      - ./tokens:/tokens:ro

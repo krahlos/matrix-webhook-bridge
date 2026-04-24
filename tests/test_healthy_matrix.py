@@ -12,9 +12,9 @@ from matrix_webhook_bridge.server import _get_config, app
 
 
 @pytest.fixture
-def _mock_secrets(tmp_path, monkeypatch):
-    monkeypatch.setattr("matrix_webhook_bridge.matrix._SECRETS_DIR", str(tmp_path))
-    monkeypatch.setattr("matrix_webhook_bridge.server._SECRETS_DIR", str(tmp_path))
+def _mock_tokens(tmp_path, monkeypatch):
+    monkeypatch.setattr("matrix_webhook_bridge.matrix._TOKENS_DIR", str(tmp_path))
+    monkeypatch.setattr("matrix_webhook_bridge.server._TOKENS_DIR", str(tmp_path))
     (tmp_path / "bridge_as_token.txt").write_text("fake-as-token")
 
 
@@ -37,7 +37,7 @@ def _make_client(config):
     app.dependency_overrides.clear()
 
 
-@pytest.mark.usefixtures("_mock_secrets")
+@pytest.mark.usefixtures("_mock_tokens")
 class TestHealthyMatrix:
     def test_reachable_returns_200(self):
         config = _make_config()

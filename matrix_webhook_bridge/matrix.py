@@ -11,12 +11,12 @@ VERSIONS_PATH = "/_matrix/client/versions"
 
 logger = logging.getLogger(__name__)
 
-_SECRETS_DIR = "/run/secrets"
+_TOKENS_DIR = "/tokens"
 _RETRY_DELAYS = (1, 2, 4)  # seconds before attempts 2, 3, 4
 
 
 def _token_path(user: str) -> str:
-    return f"{_SECRETS_DIR}/{user}_as_token.txt"
+    return f"{_TOKENS_DIR}/{user}_as_token.txt"
 
 
 @lru_cache

@@ -26,6 +26,7 @@ coverage.xml
 
 # Secrets & local config
 secrets/
+tokens/
 .env
 .env.*
 !.env.example

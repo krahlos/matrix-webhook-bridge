@@ -13,7 +13,7 @@ curl -fsSL https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/
 ### Manual Steps
 
 The installer downloads `docker-compose.yml`, creates `config/bridge.yml` from the example,
-generates `secrets/bridge_as_token.txt`, and bootstraps an `bridge-registration.yml` with the
+generates `tokens/bridge_as_token.txt`, and bootstraps an `bridge-registration.yml` with the
 token already filled in. What it cannot do is register the Application Service with your
 Synapse — that must be done manually.
 

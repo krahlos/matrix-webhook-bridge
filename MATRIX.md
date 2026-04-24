@@ -33,15 +33,15 @@ app_service_config_files:
 
 ## Create the AS token secret
 
-Generate a token and write it to the secrets file expected by `docker-compose.yml`:
+Generate a token and write it to the tokens file expected by `docker-compose.yml`:
 
 ```shell
-mkdir -p secrets
-openssl rand -hex 32 > secrets/bridge_as_token.txt
+mkdir -p tokens
+openssl rand -hex 32 > tokens/bridge_as_token.txt
 ```
 
 The `docker-compose.yml` already mounts this as a Docker secret at
-`/run/secrets/bridge_as_token.txt`. Use the same token value in the Application
+`/tokens/bridge_as_token.txt`. Use the same token value in the Application
 Service registration file under `as_token`.
 
 ## Get compatibility token for Synapse API
@@ -91,7 +91,7 @@ Call the join endpoint on behalf of the AS bot user using the AS token:
 
 ```shell
 curl -s -X POST \
-  -H "Authorization: Bearer $(cat secrets/bridge_as_token.txt)" \
+  -H "Authorization: Bearer $(cat tokens/bridge_as_token.txt)" \
   -H "Content-Type: application/json" \
   -d '{}' \
   "https://<matrix_base_url>/_matrix/client/v3/join/<room_id>?user_id=@bridge:<domain>"

@@ -3,7 +3,7 @@ set -eu
 
 BASE_URL="https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main"
 
-for path in docker-compose.yml config secrets bridge-registration.yml; do
+for path in docker-compose.yml config tokens bridge-registration.yml; do
   if [ -e "$path" ]; then
     echo "Error: '$path' already exists. Run this installer in an empty directory." >&2
     exit 1
@@ -18,10 +18,10 @@ mkdir config
 curl -fsSL "$BASE_URL/bridge.yml.example" -o config/bridge.yml
 
 echo "Generating tokens and bootstrapping bridge-registration.yml..."
-mkdir secrets
+mkdir tokens
 AS_TOKEN=$(openssl rand -hex 32)
 HS_TOKEN=$(openssl rand -hex 32)
-echo "$AS_TOKEN" > secrets/bridge_as_token.txt
+echo "$AS_TOKEN" > tokens/bridge_as_token.txt
 curl -fsSL "$BASE_URL/bridge-registration.yml.example" -o bridge-registration.yml
 sed -i "s/<your_as_token_here>/$AS_TOKEN/g" bridge-registration.yml
 sed -i "s/<your_hs_token_here>/$HS_TOKEN/g" bridge-registration.yml

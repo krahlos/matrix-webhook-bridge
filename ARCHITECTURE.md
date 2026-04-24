@@ -64,6 +64,6 @@ On HTTP 5xx or network error the client retries up to 3 times with exponential b
 
 ## Token management
 
-Each Matrix user has an appservice token stored in `/run/secrets/<user>_as_token.txt`. Tokens
+Each Matrix user has an appservice token stored in `/tokens/<user>_as_token.txt`. Tokens
 are read once and cached in memory. `SIGHUP` invalidates the cache to force a re-read on the
 next request.

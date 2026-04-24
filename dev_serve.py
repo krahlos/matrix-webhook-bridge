@@ -1,4 +1,4 @@
-"""Dev shim: redirects _SECRETS_DIR to ./secrets before startup.
+"""Dev shim: redirects _TOKENS_DIR to ./tokens before startup.
 
 Usage:
     uv run python dev_serve.py serve --config bridge.yml.example
@@ -10,12 +10,12 @@ from pathlib import Path
 import matrix_webhook_bridge.matrix as _m
 import matrix_webhook_bridge.server as _s
 
-_secrets = str(Path(__file__).parent / "secrets")
-_m._SECRETS_DIR = _secrets
-_s._SECRETS_DIR = _secrets
+_tokens = str(Path(__file__).parent / "tokens")
+_m._TOKENS_DIR = _tokens
+_s._TOKENS_DIR = _tokens
 
-# Create the secrets directory if it doesn't exist
-Path(_secrets).mkdir(exist_ok=True)
+# Create the tokens directory if it doesn't exist
+Path(_tokens).mkdir(exist_ok=True)
 
 # Create a fake token for the default user if it doesn't exist
 default_user_token_path = Path(_m._token_path("bridge"))

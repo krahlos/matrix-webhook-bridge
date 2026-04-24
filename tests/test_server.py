@@ -7,7 +7,12 @@ import pytest
 from starlette.testclient import TestClient
 
 from matrix_webhook_bridge.config import Config
-from matrix_webhook_bridge.server import _get_config, _pre_flight_check, app, resolve_rooms
+from matrix_webhook_bridge.server import (
+    _get_config,
+    _pre_flight_check,
+    app,
+    resolve_rooms,
+)
 
 
 def _make_config(**kwargs) -> Config:
@@ -30,9 +35,9 @@ def _make_client(config):
 
 
 @pytest.fixture
-def _mock_secrets(tmp_path, monkeypatch):
-    monkeypatch.setattr("matrix_webhook_bridge.matrix._SECRETS_DIR", str(tmp_path))
-    monkeypatch.setattr("matrix_webhook_bridge.server._SECRETS_DIR", str(tmp_path))
+def _mock_tokens(tmp_path, monkeypatch):
+    monkeypatch.setattr("matrix_webhook_bridge.matrix._TOKENS_DIR", str(tmp_path))
+    monkeypatch.setattr("matrix_webhook_bridge.server._TOKENS_DIR", str(tmp_path))
     (tmp_path / "bridge_as_token.txt").write_text("fake-as-token")
 
 
@@ -62,7 +67,7 @@ class TestResolveRooms:
         assert resolve_rooms("svc", None, config) == ["!default:example.com"]
 
 
-@pytest.mark.usefixtures("_mock_secrets")
+@pytest.mark.usefixtures("_mock_tokens")
 class TestNotifyMultiRoom:
     def test_room_param_routes_to_specified_room(self):
         config = _make_config()
@@ -106,22 +111,22 @@ class TestNotifyMultiRoom:
 
 class TestPreFlightServiceRooms:
     @pytest.fixture
-    def secrets_dir(self, tmp_path, monkeypatch):
-        monkeypatch.setattr("matrix_webhook_bridge.matrix._SECRETS_DIR", str(tmp_path))
-        monkeypatch.setattr("matrix_webhook_bridge.server._SECRETS_DIR", str(tmp_path))
+    def tokens_dir(self, tmp_path, monkeypatch):
+        monkeypatch.setattr("matrix_webhook_bridge.matrix._TOKENS_DIR", str(tmp_path))
+        monkeypatch.setattr("matrix_webhook_bridge.server._TOKENS_DIR", str(tmp_path))
         (tmp_path / "bridge_as_token.txt").write_text("tok")
         return tmp_path
 
-    def test_accepts_valid_service_rooms(self, secrets_dir):
+    def test_accepts_valid_service_rooms(self, tokens_dir):
         config = _make_config(service_rooms={"svc": ["!room1:example.com", "!room2:example.com"]})
         _pre_flight_check(config)
 
-    def test_rejects_invalid_room_id_format(self, secrets_dir):
+    def test_rejects_invalid_room_id_format(self, tokens_dir):
         config = _make_config(service_rooms={"svc": ["not-a-room-id"]})
         with pytest.raises(RuntimeError, match="Invalid room_id"):
             _pre_flight_check(config)
 
-    def test_rejects_room_id_without_exclamation(self, secrets_dir):
+    def test_rejects_room_id_without_exclamation(self, tokens_dir):
         config = _make_config(service_rooms={"svc": ["room:example.com"]})
         with pytest.raises(RuntimeError, match="Invalid room_id"):
             _pre_flight_check(config)

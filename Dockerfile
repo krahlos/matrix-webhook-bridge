@@ -45,9 +45,7 @@ ENV PATH="/venv/bin:$PATH"
 ENV PYTHONUNBUFFERED=1
 ENV PORT=5001
 
-# Secrets are expected at /run/secrets/<user>_as_token.txt
-# Mount them via Docker secrets (Swarm) or a bind mount in compose.
-VOLUME ["/run/secrets"]
+VOLUME ["/tokens"]
 
 USER bridge
 

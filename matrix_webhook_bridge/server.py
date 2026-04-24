@@ -20,7 +20,7 @@ from . import metrics
 from .config import Config
 from .formatters import SERVICES, format_generic
 from .log import request_id as _request_id
-from .matrix import _SECRETS_DIR, _token, _token_path
+from .matrix import _TOKENS_DIR, _token, _token_path
 from .matrix import join_room as _join_room
 from .matrix import notify as _matrix_notify
 from .matrix import probe as _matrix_probe
@@ -78,7 +78,7 @@ def _pre_flight_check(config: Config) -> None:
 
     available_tokens: list[str] = []
     try:
-        entries = os.listdir(_SECRETS_DIR)
+        entries = os.listdir(_TOKENS_DIR)
     except FileNotFoundError:
         entries = []
 
