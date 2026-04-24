@@ -4,7 +4,7 @@
 import json
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404  # intentional, used for docker exec
 import time
 import urllib.error
 import urllib.request
@@ -51,7 +51,11 @@ class _JsonFormatter(logging.Formatter):
         }
         if record.exc_info:
             entry["exc"] = self.formatException(record.exc_info)
-        extra = {k: v for k, v in record.__dict__.items() if k not in _STDLIB_ATTRS and not k.startswith("_")}
+        extra = {
+            k: v
+            for k, v in record.__dict__.items()
+            if k not in _STDLIB_ATTRS and not k.startswith("_")
+        }
         if extra:
             entry.update(extra)
         return json.dumps(entry, default=str)
@@ -70,7 +74,7 @@ TOP_OFFENDERS = int(os.environ.get("TOP_OFFENDERS", "3"))
 
 
 def _run_cscli(*args: str) -> list:
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607  # hardcoded docker exec, no user input
         ["docker", "exec", "crowdsec", "cscli", *args, "-o", "json"],
         capture_output=True,
         text=True,
@@ -106,7 +110,8 @@ def _target(alert: dict) -> str:
 def _flag(cc: str) -> str:
     if not cc or len(cc) != 2 or not cc.isalpha():
         return ""
-    return chr(0x1F1E6 + ord(cc.upper()[0]) - ord("A")) + chr(0x1F1E6 + ord(cc.upper()[1]) - ord("A"))
+    base = 0x1F1E6 - ord("A")
+    return chr(base + ord(cc.upper()[0])) + chr(base + ord(cc.upper()[1]))
 
 
 def _short_scenario(scenario: str) -> str:
@@ -224,7 +229,7 @@ def send(payload: dict) -> None:
         method="POST",
     )
     try:
-        urllib.request.urlopen(req, timeout=30)
+        urllib.request.urlopen(req, timeout=30)  # nosec B310  # URL sourced from config
     except (urllib.error.URLError, OSError) as e:
         logger.error("Failed to send digest via matrix-webhook-bridge: %s", e)
 
@@ -243,7 +248,8 @@ def main() -> None:
         logger.info("No bans found in digest window — skipping.")
         return
 
-    logger.info("Sending digest: %s bans, %s active.", sum(len(a.get("decisions", [])) for a in alerts), active_count)
+    ban_count = sum(len(a.get("decisions", [])) for a in alerts)
+    logger.info("Sending digest: %s bans, %s active.", ban_count, active_count)
     send(payload)
     logger.info("Done.")
 

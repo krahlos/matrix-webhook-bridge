@@ -4,7 +4,7 @@
 import json
 import logging
 import os
-import subprocess
+import subprocess  # nosec B404  # intentional, used for docker exec
 import time
 import urllib.error
 import urllib.request
@@ -94,7 +94,7 @@ SINCE = os.environ.get("SINCE", "5m")
 
 
 def fetch_decisions() -> list:
-    result = subprocess.run(
+    result = subprocess.run(  # nosec B603 B607  # hardcoded docker exec, no user input
         [
             "docker",
             "exec",
@@ -174,7 +174,7 @@ def send(payload: dict) -> None:
         method="POST",
     )
     try:
-        urllib.request.urlopen(req, timeout=5)
+        urllib.request.urlopen(req, timeout=5)  # nosec B310  # URL sourced from config
     except urllib.error.URLError as e:
         logger.error("Failed to send notification via matrix-webhook-bridge: %s", e)
 

@@ -116,7 +116,7 @@ def send(payload: dict) -> None:
         method="POST",
     )
     try:
-        urllib.request.urlopen(req, timeout=5)
+        urllib.request.urlopen(req, timeout=5)  # nosec B310  # URL sourced from config
     except urllib.error.URLError as e:
         logger.error("Failed to send notification via matrix-webhook-bridge: %s", e)
 
