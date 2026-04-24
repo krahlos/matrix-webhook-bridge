@@ -1,6 +1,9 @@
 ---
 
 changelog:
+  exclude:
+    labels:
+      - changelog:skip
   categories:
     - title: 🚨 Breaking Changes
       labels:
