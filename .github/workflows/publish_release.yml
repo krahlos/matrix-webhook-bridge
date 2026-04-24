@@ -43,41 +43,36 @@ jobs:
     runs-on: ubuntu-latest
     needs: validate-version
     outputs:
-      sha: ${{ steps.commit.outputs.sha }}
+      sha: ${{ steps.bump.outputs.sha }}
     steps:
       - name: Checkout main
         uses: actions/checkout@v4
         with:
           ref: main
           token: ${{ secrets.RELEASE_TOKEN }}
+          fetch-depth: 0
 
-      - name: Configure git
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+
+      - name: Install tbump
+        run: pip install tbump
+
+      - name: Run tbump
+        id: bump
+        env:
+          VERSION: ${{ inputs.version }}
         run: |
           git config user.name "${{ vars.GIT_USER_NAME }}"
           git config user.email "${{ vars.GIT_USER_EMAIL }}"
 
-      - name: Bump version strings
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
+          # Remove 'v' prefix for tbump
           VERSION_NO_V="${VERSION#v}"
-          IMAGE_NAME="ghcr.io/krahlos/matrix-webhook-bridge"
-          sed -i "s/^version = .*/version = \"${VERSION_NO_V}\"/" pyproject.toml
-          sed -i \
-            "s|${IMAGE_NAME}:v[0-9]*\.[0-9]*\.[0-9]*|${IMAGE_NAME}:${VERSION}|" \
-            docker-compose.yml
-          sed -i "s/VERSION=v[0-9]*\.[0-9]*\.[0-9]*/VERSION=${VERSION}/g" INSTALL.md
 
-      - name: Commit and tag
-        id: commit
-        env:
-          VERSION: ${{ inputs.version }}
-        run: |
-          git add pyproject.toml docker-compose.yml INSTALL.md
-          git commit -m "bump version to ${VERSION}"
-          git tag "${VERSION}"
-          git push origin main
-          git push origin "${VERSION}"
+          tbump "${VERSION_NO_V}" --non-interactive
+
           echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
   run-tests:
