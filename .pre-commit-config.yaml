@@ -69,6 +69,9 @@ repos:
     rev: v2.8.0
     hooks:
       - id: pip-audit
+        args: ["--ignore-vuln", "GHSA-58qw-9mgm-455v"]
+        # GHSA-58qw-9mgm-455v (CVE-2026-3219): vulnerability in pip itself (<=26.0.1),
+        # not a project dependency. Remove once pip 26.0.2+ is available.
   - repo: https://github.com/rhysd/actionlint
     rev: v1.7.7
     hooks:
