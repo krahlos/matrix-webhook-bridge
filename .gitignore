@@ -30,6 +30,15 @@ secrets/
 .env.*
 !.env.example
 
+# Agent tools
+.claude/
+.gemini/
+.copilot/
+.cursor/
+AGENTS.md
+CLAUDE.md
+GEMINI.md
+
 # Editors / OS
 .vscode/
 .idea/
