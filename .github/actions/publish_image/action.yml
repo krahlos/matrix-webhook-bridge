@@ -22,6 +22,9 @@ inputs:
   sha:
     description: "Full commit SHA for OCI revision label"
     required: true
+  build_date:
+    description: "ISO-8601 timestamp"
+    required: true
   server_url:
     description: "GitHub server URL for OCI source label"
     required: true
@@ -47,14 +50,14 @@ runs:
         platforms: linux/amd64
         push: true
         build-args: |
+          VERSION=${{ inputs.version }}
           MAINTAINER=${{ inputs.maintainer }}
+          IMAGE_REVISION=${{ inputs.sha }}
+          BUILD_DATE=${{ inputs.build_date }}
+          SOURCE_URL=${{ inputs.server_url }}/${{ inputs.image_name }}
         tags: |
           ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}
           ${{ inputs.registry }}/${{ inputs.image_name }}:latest
-        labels: |
-          org.opencontainers.image.source=${{ inputs.server_url }}/${{ inputs.image_name }}
-          org.opencontainers.image.revision=${{ inputs.sha }}
-          org.opencontainers.image.version=${{ inputs.version }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 

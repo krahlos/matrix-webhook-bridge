@@ -112,6 +112,11 @@ jobs:
         with:
           ref: ${{ inputs.version }}
 
+      - name: Set Build Metadata
+        id: meta
+        run: |
+          echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
       - name: Publish image
         uses: ./.github/actions/publish_image
         with:
@@ -121,6 +126,7 @@ jobs:
           maintainer: ${{ vars.MAINTAINER }}
           token: ${{ secrets.GITHUB_TOKEN }}
           sha: ${{ needs.bump-version.outputs.sha }}
+          build_date: ${{ steps.meta.outputs.date }}
           server_url: ${{ github.server_url }}
 
   create-release:

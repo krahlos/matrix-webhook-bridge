@@ -16,10 +16,19 @@ RUN pip install --no-cache-dir .
 FROM python:3.12-slim
 
 ARG MAINTAINER="unknown"
+ARG VERSION="0.0.0-dev"
+ARG IMAGE_REVISION="unknown"
+ARG BUILD_DATE="unknown"
+ARG SOURCE_URL="https://github.com/krahlos/matrix-webhook-bridge"
 
-LABEL org.opencontainers.image.source="https://github.com/krahlos/matrix-webhook-bridge"
+LABEL org.opencontainers.image.title="Matrix Webhook Bridge"
 LABEL org.opencontainers.image.description="Webhook-to-Matrix notification bridge with per-sender bot users"
-LABEL maintainer="${MAINTAINER}"
+LABEL org.opencontainers.image.source="${SOURCE_URL}"
+LABEL org.opencontainers.image.licenses="MIT"
+LABEL org.opencontainers.image.version="${VERSION}"
+LABEL org.opencontainers.image.revision="${IMAGE_REVISION}"
+LABEL org.opencontainers.image.created="${BUILD_DATE}"
+LABEL org.opencontainers.image.authors="${MAINTAINER}"
 
 RUN apt-get update \
  && apt-get install -y --no-install-recommends wget \

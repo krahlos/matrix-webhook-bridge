@@ -45,9 +45,23 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
+      - name: Set Build Metadata
+        run: |
+          {
+            echo "IMAGE_VERSION=0.0.0-sha.${GITHUB_SHA::7}"
+            echo "BUILD_DATE=$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+            echo "IMAGE_REVISION=${{ github.sha }}"
+          } >> "$GITHUB_ENV"
+
       - name: Build image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
           push: false
+          build-args: |
+            VERSION=${{ env.IMAGE_VERSION }}
+            MAINTAINER=${{ github.actor }}
+            IMAGE_REVISION=${{ env.IMAGE_REVISION }}
+            BUILD_DATE=${{ env.BUILD_DATE }}
+            SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
