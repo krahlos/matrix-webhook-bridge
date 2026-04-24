@@ -15,8 +15,8 @@ tag_template = "v{new_version}"
 
 [[file]]
 src = "pyproject.toml"
-search = 'version = "{current}"'
+search = 'version = "{current_version}"'
 
 [[file]]
 src = "docker-compose.yml"
-search = 'ghcr.io/krahlos/matrix-webhook-bridge:v{current}'
+search = 'ghcr.io/krahlos/matrix-webhook-bridge:v{current_version}'
