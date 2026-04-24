@@ -78,7 +78,9 @@ def test_notify_http_error_includes_response_body(tmp_path, caplog):
             )
 
     # The body must be in the log record
-    error_messages = [record.getMessage() for record in caplog.records if record.levelno == logging.ERROR]
+    error_messages = [
+        record.getMessage() for record in caplog.records if record.levelno == logging.ERROR
+    ]
     assert any("M_LIMIT_EXCEEDED" in m for m in error_messages), error_messages
     assert any("retry_after_ms" in m for m in error_messages), error_messages
     assert any("Too many requests" in m for m in error_messages), error_messages
@@ -118,4 +120,4 @@ def test_notify_http_error_unreadable_body_does_not_crash(tmp_path, caplog):
             )
 
     # Must have logged something even though reading the body failed
-    assert any("Matrix send failed" in r.getMessage() for r in caplog.records)
+    assert any("Matrix request failed" in r.getMessage() for r in caplog.records)

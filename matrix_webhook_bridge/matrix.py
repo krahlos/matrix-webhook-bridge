@@ -24,6 +24,41 @@ def _token(path: str) -> str:
     return open(path).read().strip()
 
 
+def _with_retry(fn):
+    """Call fn(), retrying on transient 5xx/network errors using _RETRY_DELAYS."""
+    delays = iter(_RETRY_DELAYS)
+    while True:
+        try:
+            return fn()
+        except HTTPError as e:
+            try:
+                err_body = e.read().decode("utf-8", errors="replace")
+            except Exception:  # noqa: BLE001
+                err_body = ""
+            wrapped = HTTPError(e.url, e.code, f"{e.reason}: {err_body}", e.headers, None)
+            if e.code < 500:
+                logger.error("Matrix request failed (%s %s): %s", e.code, e.reason, err_body)
+                raise wrapped from e
+            delay = next(delays, None)
+            if delay is None:
+                logger.error("Matrix request failed (%s %s): %s", e.code, e.reason, err_body)
+                raise wrapped from e
+            logger.warning(
+                "Matrix request failed (%s %s), retrying in %ds: %s",
+                e.code,
+                e.reason,
+                delay,
+                err_body,
+            )
+        except URLError as e:
+            delay = next(delays, None)
+            if delay is None:
+                logger.error("Matrix request failed: %s", e)
+                raise
+            logger.warning("Matrix request failed (%s), retrying in %ds", e, delay)
+        time.sleep(delay)
+
+
 def probe(base_url: str, timeout: int = 5) -> None:
     """GET /_matrix/client/versions to check homeserver reachability."""
     url = f"{base_url}{VERSIONS_PATH}"
@@ -56,8 +91,7 @@ def notify(
         }
     ).encode()
 
-    delays = iter(_RETRY_DELAYS)
-    while True:
+    def attempt():
         req = Request(
             url,
             data=payload,
@@ -68,35 +102,8 @@ def notify(
             },
         )
         logger.debug("Sending Matrix message as %s: %s", user_id, plain)
-        try:
-            with urlopen(req, timeout=timeout) as r:
-                r.read()
-            logger.info("Matrix message sent as %s", user_id)
-            return
-        except HTTPError as e:
-            try:
-                err_body = e.read().decode("utf-8", errors="replace")
-            except Exception:  # noqa: BLE001
-                err_body = ""
-            wrapped = HTTPError(e.url, e.code, f"{e.reason}: {err_body}", e.headers, None)
-            if e.code < 500:
-                logger.error("Matrix send failed (%s %s): %s", e.code, e.reason, err_body)
-                raise wrapped from e
-            delay = next(delays, None)
-            if delay is None:
-                logger.error("Matrix send failed (%s %s): %s", e.code, e.reason, err_body)
-                raise wrapped from e
-            logger.warning(
-                "Matrix send failed (%s %s), retrying in %ds: %s",
-                e.code,
-                e.reason,
-                delay,
-                err_body,
-            )
-        except URLError as e:
-            delay = next(delays, None)
-            if delay is None:
-                logger.error("Matrix send failed: %s", e)
-                raise
-            logger.warning("Matrix send failed (%s), retrying in %ds", e, delay)
-        time.sleep(delay)
+        with urlopen(req, timeout=timeout) as r:
+            r.read()
+        logger.info("Matrix message sent as %s", user_id)
+
+    _with_retry(attempt)
