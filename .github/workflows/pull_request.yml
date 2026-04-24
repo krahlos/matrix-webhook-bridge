@@ -9,6 +9,31 @@ on:
 permissions: {}
 
 jobs:
+  changes:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      dockerfile: ${{ steps.filter.outputs.dockerfile }}
+      src: ${{ steps.filter.outputs.src }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Filter changed paths
+        id: filter
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            dockerfile:
+              - Dockerfile
+            src:
+              - "matrix_webhook_bridge/**"
+              - "tests/**"
+              - pyproject.toml
+
   pre-commit:
     name: Pre-commit Checks
     runs-on: ubuntu-latest
@@ -24,7 +49,8 @@ jobs:
   run-tests:
     name: Run Tests
     runs-on: ubuntu-latest
-    needs: pre-commit
+    needs: [pre-commit, changes]
+    if: needs.changes.outputs.src == 'true'
     permissions:
       contents: read
     steps:
@@ -45,7 +71,11 @@ jobs:
   build-image:
     name: Build Image
     runs-on: ubuntu-latest
-    needs: run-tests
+    needs: [run-tests, changes]
+    if: >-
+      always() &&
+      needs.changes.outputs.dockerfile == 'true' &&
+      needs.run-tests.result != 'failure'
     permissions:
       contents: read
     steps:
