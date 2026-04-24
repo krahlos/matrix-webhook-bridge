@@ -127,7 +127,7 @@ file there. Use the same pattern in new tests that exercise server startup or `/
 | --- | --- | --- |
 | `pull_request.yml` | PR opened/updated | pre-commit checks, tests (if src changed), smoke test, image build (if Dockerfile changed) |
 | `main.yml` | Push to `main` | tests, smoke test, image build |
-| `publish_release.yml` | Release published | image build + push to registry |
+| `publish_release.yml` | Manual run (`workflow_dispatch`) | image build + push to registry |
 
 Tests and smoke-test are skipped on PRs that only modify non-source files (docs, configs).
 
