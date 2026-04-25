@@ -298,4 +298,9 @@ async def notify(
 def run_server(config: Config) -> None:
     app.state.config = config
     logger.info(f"Starting Matrix notifier server on port {config.port}...")
-    uvicorn.run(app, host="", port=config.port, access_log=False)
+    # log_config=None: skip uvicorn's own dictConfig() call so the
+    # uvicorn.* loggers propagate to root and pick up the JSON formatter,
+    # instead of emitting plain-text startup lines alongside JSON app lines.
+    uvicorn.run(
+        app, host="", port=config.port, access_log=False, log_config=None
+    )
