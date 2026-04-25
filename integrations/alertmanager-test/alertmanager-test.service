@@ -1,0 +1,11 @@
+[Unit]
+Description=Nightly Alertmanager smoke test via matrix-webhook-bridge
+Documentation=https://github.com/krahlos/matrix-webhook-bridge
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/alertmanager-test.py
+Environment=ALERTMANAGER_URL=http://localhost:9093
+Environment=MATRIX_WEBHOOK_BRIDGE_URL=http://localhost:5001
+Environment=WAIT_SECONDS=20
