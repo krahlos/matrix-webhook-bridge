@@ -57,6 +57,13 @@ class TestAutojoinAll:
                 _autojoin_all(config)  # must not raise
         assert any("autojoin failed" in r.getMessage() for r in caplog.records)
 
+    def test_service_user_without_service_rooms_joins_default_room(self):
+        config = _cfg(service_users={"diun": "diun"})
+        with patch("matrix_webhook_bridge.server._join_room") as mock_join:
+            _autojoin_all(config)
+        called = [(c.args[3], c.args[1]) for c in mock_join.call_args_list]
+        assert ("@diun:example.com", "!default:example.com") in called
+
     def test_autojoin_false_skipped_at_lifespan(self):
         config = _cfg(autojoin=False)
         assert not config.autojoin
