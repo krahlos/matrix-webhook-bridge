@@ -12,3 +12,9 @@ services:
     volumes:
       - ./config/bridge.yml:/etc/matrix-webhook-bridge/bridge.yml:ro
       - ./tokens:/tokens:ro
+    user: "65534:65534"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
