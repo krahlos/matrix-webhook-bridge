@@ -100,6 +100,9 @@ def _autojoin_all(config: Config) -> None:
     for svc, rooms in config.service_rooms.items():
         user = config.service_users.get(svc, config.default_user)
         users_rooms.setdefault(user, set()).update(rooms)
+    for svc, user in config.service_users.items():
+        if svc not in config.service_rooms:
+            users_rooms.setdefault(user, set()).add(config.room_id)
 
     for user, room_set in users_rooms.items():
         user_id = f"@{user}:{config.domain}"
