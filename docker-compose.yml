@@ -4,7 +4,7 @@
 
 services:
   bridge:
-    image: ghcr.io/krahlos/matrix-webhook-bridge:v0.6.0
+    image: ghcr.io/krahlos/matrix-webhook-bridge:v0.6.1
     container_name: matrix-webhook-bridge
     restart: unless-stopped
     ports:
