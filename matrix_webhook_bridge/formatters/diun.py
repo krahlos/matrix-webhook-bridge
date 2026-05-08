@@ -1,3 +1,6 @@
+from datetime import datetime
+
+
 def format_diun(data: dict) -> list[tuple[str, str]]:
     """Format a Diun webhook payload to a Matrix message."""
     image = data.get("image", "?")
@@ -7,6 +10,14 @@ def format_diun(data: dict) -> list[tuple[str, str]]:
     hub_link = data.get("hub_link", "")
     created = data.get("created", "")
 
+    if created:
+        try:
+            # Diun usually sends ISO 8601 format
+            dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+            created = dt.strftime("%Y-%m-%d %H:%M")
+        except (ValueError, TypeError):
+            pass
+
     icon = "🆕" if status == "new" else "🔄"
     status_label = status.upper() if status else "UPDATE"
 
@@ -15,6 +26,8 @@ def format_diun(data: dict) -> list[tuple[str, str]]:
         plain += f" on {hostname}"
     if platform:
         plain += f" ({platform})"
+    if created:
+        plain += f" (Created: {created})"
 
     if hub_link:
         html = f'{icon} [{status_label}] <a href="{hub_link}">{image}</a>'
