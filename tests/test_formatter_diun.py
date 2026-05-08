@@ -53,7 +53,7 @@ class TestFormatDiun:
 
     def test_created_in_html(self):
         _, html = format_diun(_FULL_PAYLOAD)[0]
-        assert "2020-03-26T12:23:56Z" in html
+        assert "2020-03-26 12:23" in html
 
     def test_no_hub_link_falls_back_to_bold(self):
         payload = {**_FULL_PAYLOAD, "hub_link": ""}
