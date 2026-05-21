@@ -195,6 +195,12 @@ def healthy(config: Config = Depends(_get_config)):
     return {"status": "ok", "uptime": uptime}
 
 
+@app.get("/version", summary="Application version", tags=["health"])
+def app_version():
+    """Return the current application version from package metadata."""
+    return {"version": version("matrix-webhook-bridge")}
+
+
 @app.get(
     "/healthy/matrix",
     summary="Matrix homeserver health check",
