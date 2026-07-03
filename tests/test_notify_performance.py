@@ -4,9 +4,9 @@ Counts connect() calls via cProfile instead of measuring wall-clock time:
 counts are deterministic, a timing threshold would flake on shared CI
 runners.
 
-Checked the test can fail: clearing matrix_mod._connections before each
-notify() in the loop (forcing a fresh connection every time) turns the
-1 connect() below into 20, past MAX_CONNECTS.
+Checked the test can fail: passing headers={"Connection": "close"} in
+_do_request (forcing a fresh connection every time) turns the 1 connect()
+below into 20, past MAX_CONNECTS.
 """
 import threading
 from cProfile import Profile
@@ -48,7 +48,7 @@ def test_notify_reuses_connection_across_burst(tmp_path, echo_server):
     token = tmp_path / "bridge_as_token.txt"
     token.write_text("test-token\n")
     matrix_mod._token.cache_clear()
-    matrix_mod._connections.clear()
+    matrix_mod._http.clear()
 
     profiler = Profile()
     profiler.enable()

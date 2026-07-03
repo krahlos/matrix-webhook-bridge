@@ -1,14 +1,14 @@
-import http.client
 import io
 import json
 import logging
-import threading
 import time
 from email.message import Message as HTTPMessage
 from functools import lru_cache
 from urllib.error import HTTPError, URLError
-from urllib.parse import quote, urlsplit
+from urllib.parse import quote
 from uuid import uuid4
+
+import urllib3
 
 VERSIONS_PATH = "/_matrix/client/versions"
 
@@ -27,72 +27,25 @@ def _token(path: str) -> str:
     return open(path).read().strip()
 
 
-class _KeepAliveConnection:
-    """Keep-alive HTTP(S) connection to one host, reused across requests.
-
-    Exists to avoid a TCP+TLS handshake per request, which dominated CPU
-    during notification bursts (#95). A lock serializes requests because
-    http.client connections are not thread-safe; a connection dropped by
-    the server (idle keep-alive timeout) is reopened and retried once.
-
-    ponytail: one serialized connection per host caps throughput at
-    1/RTT msg/s; switch to a small per-user connection pool if burst
-    latency ever matters.
-    """
-
-    def __init__(self, base_url: str):
-        parts = urlsplit(base_url)
-        self._cls = (
-            http.client.HTTPSConnection if parts.scheme == "https" else http.client.HTTPConnection
-        )
-        self._netloc = parts.netloc
-        self._lock = threading.Lock()
-        self._conn: http.client.HTTPConnection | None = None
-
-    def request(self, method: str, path: str, body: bytes | None, headers: dict, timeout: int):
-        with self._lock:
-            for attempt in (1, 2):
-                if self._conn is None:
-                    self._conn = self._cls(self._netloc, timeout=timeout)
-                elif self._conn.sock is not None:
-                    # http.client applies .timeout only at connect; adjust the
-                    # live socket directly for an already-open connection.
-                    self._conn.sock.settimeout(timeout)
-                try:
-                    self._conn.request(method, path, body=body, headers=headers)
-                    resp = self._conn.getresponse()
-                    return resp.status, resp.reason, resp.read()
-                except (http.client.HTTPException, OSError):
-                    self._conn.close()
-                    self._conn = None
-                    if attempt == 2:
-                        raise
-
-
-_connections: dict[str, _KeepAliveConnection] = {}
-_connections_lock = threading.Lock()
-
-
-def _connection_for(base_url: str) -> _KeepAliveConnection:
-    with _connections_lock:
-        conn = _connections.get(base_url)
-        if conn is None:
-            conn = _connections[base_url] = _KeepAliveConnection(base_url)
-        return conn
+# Pooled keep-alive connections: avoids a TCP+TLS handshake per request,
+# which dominated CPU during notification bursts (#95). Retry(1) re-sends
+# once when the server drops an idle keep-alive connection.
+_http = urllib3.PoolManager(maxsize=4, retries=urllib3.Retry(1, backoff_factor=0))
 
 
 def _do_request(
     base_url: str, method: str, path: str, body: bytes | None, headers: dict, timeout: int
 ) -> bytes:
-    """Issue an HTTP request against base_url, reusing a keep-alive connection."""
-    conn = _connection_for(base_url)
+    """Issue an HTTP request against base_url, reusing pooled keep-alive connections."""
     try:
-        status, reason, data = conn.request(method, path, body, headers, timeout)
-    except (http.client.HTTPException, OSError) as e:
+        resp = _http.request(method, base_url + path, body=body, headers=headers, timeout=timeout)
+    except urllib3.exceptions.HTTPError as e:
         raise URLError(e) from e
-    if status >= 400:
-        raise HTTPError(base_url + path, status, reason, HTTPMessage(), io.BytesIO(data))
-    return bytes(data)
+    if resp.status >= 400:
+        raise HTTPError(
+            base_url + path, resp.status, resp.reason or "", HTTPMessage(), io.BytesIO(resp.data)
+        )
+    return bytes(resp.data)
 
 
 def _with_retry(fn):

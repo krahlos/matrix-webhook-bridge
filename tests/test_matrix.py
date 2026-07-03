@@ -11,13 +11,6 @@ import pytest
 from matrix_webhook_bridge import matrix as matrix_mod
 
 
-@pytest.fixture(autouse=True)
-def _clear_connections():
-    matrix_mod._connections.clear()
-    yield
-    matrix_mod._connections.clear()
-
-
 def test_notify_success_path(tmp_path):
     token = tmp_path / "user_as_token.txt"
     token.write_text("test-token\n")
@@ -156,28 +149,3 @@ def test_join_room_4xx_raises_immediately(tmp_path):
                 timeout=5,
             )
     assert exc_info.value.code == 403
-
-
-def test_connection_reused_across_notify_calls(tmp_path):
-    """Regression test for #95: bursts of notifies must not re-handshake per call."""
-    token = tmp_path / "user_as_token.txt"
-    token.write_text("test-token\n")
-    matrix_mod._token.cache_clear()
-
-    fake_resp = type("_Resp", (), {"status": 200, "reason": "OK", "read": lambda self: b""})()
-    with patch("http.client.HTTPSConnection") as mock_conn_cls:
-        mock_conn_cls.return_value.getresponse.return_value = fake_resp
-        for _ in range(3):
-            matrix_mod.notify(
-                base_url="https://matrix.example.org",
-                room_id="!room:example.org",
-                plain="hello",
-                html="<b>hello</b>",
-                token_file=str(token),
-                user_id="@bot:example.org",
-                timeout=5,
-            )
-
-    # One connection object for all three sends, not one per send.
-    mock_conn_cls.assert_called_once()
-    assert mock_conn_cls.return_value.request.call_count == 3
