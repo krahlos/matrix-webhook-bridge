@@ -1,11 +1,14 @@
+import io
 import json
 import logging
 import time
+from email.message import Message as HTTPMessage
 from functools import lru_cache
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
-from urllib.request import Request, urlopen
 from uuid import uuid4
+
+import urllib3
 
 VERSIONS_PATH = "/_matrix/client/versions"
 
@@ -22,6 +25,27 @@ def _token_path(user: str) -> str:
 @lru_cache
 def _token(path: str) -> str:
     return open(path).read().strip()
+
+
+# Pooled keep-alive connections: avoids a TCP+TLS handshake per request,
+# which dominated CPU during notification bursts (#95). Retry(1) re-sends
+# once when the server drops an idle keep-alive connection.
+_http = urllib3.PoolManager(maxsize=4, retries=urllib3.Retry(1, backoff_factor=0))
+
+
+def _do_request(
+    base_url: str, method: str, path: str, body: bytes | None, headers: dict, timeout: int
+) -> bytes:
+    """Issue an HTTP request against base_url, reusing pooled keep-alive connections."""
+    try:
+        resp = _http.request(method, base_url + path, body=body, headers=headers, timeout=timeout)
+    except urllib3.exceptions.HTTPError as e:
+        raise URLError(e) from e
+    if resp.status >= 400:
+        raise HTTPError(
+            base_url + path, resp.status, resp.reason or "", HTTPMessage(), io.BytesIO(resp.data)
+        )
+    return bytes(resp.data)
 
 
 def _with_retry(fn):
@@ -67,24 +91,18 @@ def join_room(
     timeout: int = 5,
 ) -> None:
     """Join a Matrix room as user_id."""
-    url = (
-        f"{base_url}/_matrix/client/v3/join/{quote(room_id, safe='')}"
+    path = (
+        f"/_matrix/client/v3/join/{quote(room_id, safe='')}"
         f"?user_id={quote(user_id, safe='')}"
     )
 
     def attempt():
-        req = Request(
-            url,
-            data=b"{}",
-            method="POST",
-            headers={
-                "Authorization": f"Bearer {_token(token_file)}",
-                "Content-Type": "application/json",
-            },
-        )
+        headers = {
+            "Authorization": f"Bearer {_token(token_file)}",
+            "Content-Type": "application/json",
+        }
         logger.debug("Joining room %s as %s", room_id, user_id)
-        with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
-            r.read()
+        _do_request(base_url, "POST", path, b"{}", headers, timeout)
         logger.info("Joined room %s as %s", room_id, user_id)
 
     _with_retry(attempt)
@@ -92,10 +110,7 @@ def join_room(
 
 def probe(base_url: str, timeout: int = 5) -> None:
     """GET /_matrix/client/versions to check homeserver reachability."""
-    url = f"{base_url}{VERSIONS_PATH}"
-    req = Request(url, method="GET")
-    with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
-        r.read()
+    _do_request(base_url, "GET", VERSIONS_PATH, None, {}, timeout)
 
 
 def notify(
@@ -109,8 +124,8 @@ def notify(
 ) -> None:
     """Send a message to the Matrix room."""
     txn = uuid4().hex
-    url = (
-        f"{base_url}/_matrix/client/v3/rooms/{quote(room_id, safe='')}"
+    path = (
+        f"/_matrix/client/v3/rooms/{quote(room_id, safe='')}"
         f"/send/m.room.message/{txn}?user_id={quote(user_id, safe='')}"
     )
     payload = json.dumps(
@@ -123,18 +138,12 @@ def notify(
     ).encode()
 
     def attempt():
-        req = Request(
-            url,
-            data=payload,
-            method="PUT",
-            headers={
-                "Authorization": f"Bearer {_token(token_file)}",
-                "Content-Type": "application/json",
-            },
-        )
+        headers = {
+            "Authorization": f"Bearer {_token(token_file)}",
+            "Content-Type": "application/json",
+        }
         logger.debug("Sending Matrix message as %s: %s", user_id, plain)
-        with urlopen(req, timeout=timeout) as r:  # nosec B310  # URL sourced from config
-            r.read()
+        _do_request(base_url, "PUT", path, payload, headers, timeout)
         logger.info("Matrix message sent as %s", user_id)
 
     _with_retry(attempt)

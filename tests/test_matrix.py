@@ -11,28 +11,12 @@ import pytest
 from matrix_webhook_bridge import matrix as matrix_mod
 
 
-class _FakeContextManager:
-    """Minimal context manager returning a stub response with a .read() method."""
-
-    def __init__(self):
-        self._body = b""
-
-    def __enter__(self):
-        return self
-
-    def __exit__(self, exc_type, exc, tb):
-        return False
-
-    def read(self):
-        return self._body
-
-
 def test_notify_success_path(tmp_path):
     token = tmp_path / "user_as_token.txt"
     token.write_text("test-token\n")
     matrix_mod._token.cache_clear()
 
-    with patch.object(matrix_mod, "urlopen", return_value=_FakeContextManager()):
+    with patch.object(matrix_mod, "_do_request", return_value=b"") as mock_request:
         matrix_mod.notify(
             base_url="https://matrix.example.org",
             room_id="!room:example.org",
@@ -42,6 +26,8 @@ def test_notify_success_path(tmp_path):
             user_id="@bot:example.org",
             timeout=5,
         )
+    mock_request.assert_called_once()
+    assert mock_request.call_args.args[1] == "PUT"
 
 
 def test_notify_http_error_includes_response_body(tmp_path, caplog):
@@ -65,7 +51,7 @@ def test_notify_http_error_includes_response_body(tmp_path, caplog):
     )
 
     caplog.set_level(logging.ERROR)
-    with patch.object(matrix_mod, "urlopen", side_effect=err):
+    with patch.object(matrix_mod, "_do_request", side_effect=err):
         with pytest.raises(HTTPError) as exc_info:
             matrix_mod.notify(
                 base_url="https://matrix.example.org",
@@ -107,7 +93,7 @@ def test_notify_http_error_unreadable_body_does_not_crash(tmp_path, caplog):
     )
 
     caplog.set_level(logging.ERROR)
-    with patch.object(matrix_mod, "urlopen", side_effect=err):
+    with patch.object(matrix_mod, "_do_request", side_effect=err):
         with pytest.raises(HTTPError):
             matrix_mod.notify(
                 base_url="https://matrix.example.org",
@@ -128,7 +114,7 @@ def test_join_room_success_path(tmp_path):
     token.write_text("test-token\n")
     matrix_mod._token.cache_clear()
 
-    with patch.object(matrix_mod, "urlopen", return_value=_FakeContextManager()):
+    with patch.object(matrix_mod, "_do_request", return_value=b"") as mock_request:
         matrix_mod.join_room(
             base_url="https://matrix.example.org",
             room_id="!room:example.org",
@@ -136,6 +122,8 @@ def test_join_room_success_path(tmp_path):
             user_id="@bot:example.org",
             timeout=5,
         )
+    mock_request.assert_called_once()
+    assert mock_request.call_args.args[1] == "POST"
 
 
 def test_join_room_4xx_raises_immediately(tmp_path):
@@ -151,7 +139,7 @@ def test_join_room_4xx_raises_immediately(tmp_path):
         fp=io.BytesIO(b'{"errcode":"M_FORBIDDEN"}'),
     )
 
-    with patch.object(matrix_mod, "urlopen", side_effect=err):
+    with patch.object(matrix_mod, "_do_request", side_effect=err):
         with pytest.raises(HTTPError) as exc_info:
             matrix_mod.join_room(
                 base_url="https://matrix.example.org",
