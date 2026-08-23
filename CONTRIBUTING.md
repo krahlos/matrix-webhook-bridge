@@ -17,4 +17,8 @@ Contributions are welcome — no approval needed to get started.
 - Keep PRs focused — one feature or fix per PR
 - Update tests and docs where relevant
 - Follow the existing code style
-- Use `pre-commit` since they are anyway enforced on CI
+- Use [`pre-commit`][pre-commit], or preferably [`prek`][prek], since hooks are
+  anyway enforced on CI
+
+[pre-commit]: https://pre-commit.com/
+[prek]: https://github.com/j178/prek

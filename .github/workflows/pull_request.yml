@@ -36,8 +36,8 @@ jobs:
               - dev_serve.py
               - pyproject.toml
 
-  pre-commit:
-    name: Pre-commit Checks
+  prek:
+    name: Prek pre-commit Checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -45,13 +45,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Run pre-commit hooks
-        uses: pre-commit/action@v3.0.1
+      - name: Run prek hooks
+        uses: j178/prek-action@v3.0.0
 
   run-tests:
     name: Run Tests
     runs-on: ubuntu-latest
-    needs: [pre-commit, changes]
+    needs: [prek, changes]
     if: needs.changes.outputs.src == 'true'
     permissions:
       contents: read
