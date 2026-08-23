@@ -1,0 +1,19 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "customManagers": [
+    {
+      "customType": "regex",
+      "datasourceTemplate": "github-tags",
+      "fileMatch": [
+        "^prek\\.toml$"
+      ],
+      "matchStrings": [
+        "repo\\s*=\\s*\"(?<depName>[^\"]+)\"\\s*\\n(?:.*\\n)*?rev\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ],
+      "packageNameTemplate": "{{{replace 'https://github.com/' '' depName}}}"
+    }
+  ],
+  "extends": [
+    "config:recommended"
+  ]
+}
