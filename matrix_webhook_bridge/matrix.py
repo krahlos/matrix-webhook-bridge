@@ -14,7 +14,7 @@ VERSIONS_PATH = "/_matrix/client/versions"
 
 logger = logging.getLogger(__name__)
 
-_TOKENS_DIR = "/tokens"
+_TOKENS_DIR: str = "/tokens"
 _RETRY_DELAYS = (1, 2, 4)  # seconds before attempts 2, 3, 4
 
 
@@ -91,10 +91,7 @@ def join_room(
     timeout: int = 5,
 ) -> None:
     """Join a Matrix room as user_id."""
-    path = (
-        f"/_matrix/client/v3/join/{quote(room_id, safe='')}"
-        f"?user_id={quote(user_id, safe='')}"
-    )
+    path = f"/_matrix/client/v3/join/{quote(room_id, safe='')}?user_id={quote(user_id, safe='')}"
 
     def attempt():
         headers = {
