@@ -12,6 +12,7 @@
       ]
     }
   ],
+  "dependencyDashboardApproval": false,
   "extends": [
     "config:recommended",
     "schedule:weekly"
