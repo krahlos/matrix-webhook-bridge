@@ -27,12 +27,7 @@ test = ["pytest>=8", "httpx>=0.27"]
 [tool.bandit]
 exclude_dirs = ["tests"]
 
-[tool.mypy]
-python_version = "3.11"
-ignore_missing_imports = true
-warn_return_any = true
-warn_unused_ignores = true
-warn_redundant_casts = true
+[tool.ty.src]
 exclude = ["integrations/", "tests/"]
 
 [tool.ruff]

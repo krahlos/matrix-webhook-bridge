@@ -307,6 +307,4 @@ async def notify(
 def run_server(config: Config) -> None:
     app.state.config = config
     logger.info(f"Starting Matrix notifier server on port {config.port}...")
-    uvicorn.run(
-        app, host="", port=config.port, access_log=False, log_config=None
-    )
+    uvicorn.run(app, host="", port=config.port, access_log=False, log_config=None)

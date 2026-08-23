@@ -8,6 +8,7 @@ Checked the test can fail: passing headers={"Connection": "close"} in
 _do_request (forcing a fresh connection every time) turns the 1 connect()
 below into 20, past MAX_CONNECTS.
 """
+
 import threading
 from cProfile import Profile
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
