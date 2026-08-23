@@ -37,7 +37,7 @@ jobs:
               - pyproject.toml
 
   prek:
-    name: Prek pre-commit Checks
+    name: Prek Checks
     runs-on: ubuntu-latest
     permissions:
       contents: read
