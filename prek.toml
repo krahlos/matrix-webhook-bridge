@@ -147,3 +147,10 @@ rev = "v1.5.0"
 [[repos.hooks]]
 id = "detect-secrets"
 args = ["--baseline", ".secrets.baseline"]
+
+[[repos]]
+repo = "https://github.com/renovatebot/pre-commit-hooks"
+rev = "44.39.2"
+
+[[repos.hooks]]
+id = "renovate-config-validator"
