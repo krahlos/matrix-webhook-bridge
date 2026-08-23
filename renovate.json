@@ -16,5 +16,13 @@
   "extends": [
     "config:recommended",
     "schedule:weekly"
-  ]
+  ],
+  "labels": [
+    "changelog:skip"
+  ],
+  "vulnerabilityAlerts": {
+    "labels": [
+      "changelog:security"
+    ]
+  }
 }
