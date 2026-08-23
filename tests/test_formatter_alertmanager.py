@@ -53,9 +53,9 @@ def test_format_alertmanager_escapes_html_and_href_values():
     assert '<b onclick="alert(2)">details</b>' not in html
     assert '<time onmouseover="alert(3)">now</time>' not in html
     assert 'onclick="alert' not in html
-    assert '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;' in html
-    assert '&lt;b onclick=&quot;alert(2)&quot;&gt;details&lt;/b&gt;' in html
-    assert '&lt;time onmouseover=&quot;alert(3)&quot;&gt;now&lt;/time&gt;' in html
+    assert "&lt;img src=x onerror=&quot;alert(1)&quot;&gt;" in html
+    assert "&lt;b onclick=&quot;alert(2)&quot;&gt;details&lt;/b&gt;" in html
+    assert "&lt;time onmouseover=&quot;alert(3)&quot;&gt;now&lt;/time&gt;" in html
     href_match = re.search(r'<a href="([^"]*)">', html)
     assert href_match is not None
     assert href_match.group(1) == (
