@@ -8,9 +8,8 @@
         "^prek\\.toml$"
       ],
       "matchStrings": [
-        "repo\\s*=\\s*\"(?<depName>[^\"]+)\"\\s*\\n(?:.*\\n)*?rev\\s*=\\s*\"(?<currentValue>[^\"]+)\""
-      ],
-      "packageNameTemplate": "{{{replace 'https://github.com/' '' depName}}}"
+        "repo\\s*=\\s*\"https://github\\.com/(?<depName>[^\"]+?)(?:\\.git)?\"\\s*\\n(?:.*\\n)*?rev\\s*=\\s*\"(?<currentValue>[^\"]+)\""
+      ]
     }
   ],
   "extends": [
