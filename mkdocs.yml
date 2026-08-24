@@ -13,6 +13,12 @@ nav:
       - borgmatic: integrations/borgmatic.md
       - CrowdSec alert: integrations/crowdsec-alert.md
       - CrowdSec summary: integrations/crowdsec-summary.md
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
 theme:
   name: material
   palette:
