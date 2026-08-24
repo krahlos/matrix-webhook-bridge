@@ -20,6 +20,15 @@
   "labels": [
     "changelog:skip"
   ],
+  "packageRules": [
+    {
+      "groupName": "all dependencies",
+      "matchPackageNames": [
+        "*"
+      ],
+      "separateMajorMinor": false
+    }
+  ],
   "vulnerabilityAlerts": {
     "labels": [
       "changelog:security"
