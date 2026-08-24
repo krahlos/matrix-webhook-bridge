@@ -38,11 +38,11 @@ app_service_config_files:
   - /path/to/bridge-registration.yml
 ```
 
-> [!TIP]
-> Create an `applications` directory next to your `synapse/docker-compose.yml`
-> and `mv` the `bridge-registration.yml` there. Then mount `/applications` as a volume
-> in your Synapse and use `/applications/bridge-registration.yml` as the path in
-> `app_service_config_files`.
+!!! tip
+    Create an `applications` directory next to your `synapse/docker-compose.yml`
+    and `mv` the `bridge-registration.yml` there. Then mount `/applications` as a volume
+    in your Synapse and use `/applications/bridge-registration.yml` as the path in
+    `app_service_config_files`.
 
 ### Start
 
@@ -73,9 +73,9 @@ All configuration is defined in the YAML configuration file (default: `config/br
 | `server.default_user`    | no       | `bridge` | Fallback sender when no `user` param given  |
 | `server.webhook_secret`  | no       | —        | Shared secret for webhook auth (see below)  |
 
-> [!TIP]
-> When running with Docker, keep `server.port` at `5001` and remap the
-> host port in `docker-compose.yml` (e.g. `"8080:5001"`).
+!!! tip
+    When running with Docker, keep `server.port` at `5001` and remap the
+    host port in `docker-compose.yml` (e.g. `"8080:5001"`).
 
 ### Webhook authentication
 

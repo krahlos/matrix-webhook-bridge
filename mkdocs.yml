@@ -1,0 +1,48 @@
+site_name: matrix-webhook-bridge
+site_url: https://krahlos.github.io/matrix-webhook-bridge/
+site_description: >-
+  A lightweight HTTP bridge that receives webhook payloads and forwards them as messages to a
+  Matrix room, impersonating per-sender bot users via an Application Service token.
+repo_url: https://github.com/krahlos/matrix-webhook-bridge
+edit_uri: edit/main/docs/
+nav:
+  - Home: index.md
+  - Getting Started:
+      - Installation: getting-started/installation.md
+      - Matrix Application Service Setup: getting-started/matrix-setup.md
+  - Usage: usage.md
+  - Metrics: metrics.md
+  - Architecture: architecture.md
+  - Integrations:
+      - borgmatic: integrations/borgmatic.md
+      - CrowdSec alert: integrations/crowdsec-alert.md
+      - CrowdSec summary: integrations/crowdsec-summary.md
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.superfences
+theme:
+  name: material
+  features:
+    - content.action.edit
+    - content.code.copy
+  palette:
+    # Palette toggle for automatic mode (system preference)
+    - media: "(prefers-color-scheme)"
+      toggle:
+        icon: material/brightness-auto
+        name: Switch to light mode
+    # Palette toggle for light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    # Palette toggle for dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to system preference

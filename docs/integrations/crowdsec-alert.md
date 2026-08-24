@@ -21,7 +21,8 @@ remediation via `matrix-webhook-bridge`.
 
 ## Add a Matrix Application Service
 
-Follow the instructions in the [MATRIX.md](../../MATRIX.md) guide to set up a Matrix
+Follow the instructions in the
+[Matrix Application Service Setup](../getting-started/matrix-setup.md) guide to set up a Matrix
 Application Service for CrowdSec and invite the bot user to a room on your Synapse server.
 
 ## Setup
@@ -30,16 +31,16 @@ Copy the script and systemd units to the appropriate locations and make the scri
 
 ```bash
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/notify-decisions.py \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/notify-decisions.py \
   -o /etc/crowdsec/notify-decisions.py
 chmod +x /etc/crowdsec/notify-decisions.py
 
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/crowdsec-decisions.service \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/crowdsec-decisions.service \
   -o /etc/systemd/system/crowdsec-decisions.service
 
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/crowdsec-decisions.timer \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/crowdsec-decisions.timer \
   -o /etc/systemd/system/crowdsec-decisions.timer
 ```
 
