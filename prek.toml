@@ -74,7 +74,7 @@ args = ["--verbose"]
 
 [[repos]]
 repo = "https://github.com/DavidAnson/markdownlint-cli2"
-rev = "v0.20.0"
+rev = "v0.23.2"
 
 [[repos.hooks]]
 id = "markdownlint-cli2"
