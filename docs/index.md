@@ -1,17 +1,20 @@
-# Welcome to MkDocs
+# matrix-webhook-bridge
 
-For full documentation visit [mkdocs.org](https://www.mkdocs.org).
+A lightweight HTTP bridge that receives webhook payloads and forwards them as messages to a
+Matrix room, impersonating per-sender bot users via an Application Service token.
 
-## Commands
+See the [project README][readme] for a quick start, request/response examples, and the
+metrics reference.
 
-* `mkdocs new [dir-name]` - Create a new project.
-* `mkdocs serve` - Start the live-reloading docs server.
-* `mkdocs build` - Build the documentation site.
-* `mkdocs -h` - Print help message and exit.
+[readme]: https://github.com/krahlos/matrix-webhook-bridge
 
-## Project layout
+## Where to start
 
-    mkdocs.yml    # The configuration file.
-    docs/
-        index.md  # The documentation homepage.
-        ...       # Other markdown pages, images and other files.
+- [Installation](getting-started/installation.md) — install via Docker Compose, configuration
+  reference
+- [Matrix Application Service Setup](getting-started/matrix-setup.md) — register the bridge
+  with Synapse
+- [Usage](usage.md) — API, multi-room routing, autojoin
+- [Metrics](metrics.md) — Prometheus reference
+- [Architecture](architecture.md) — request flow and internals
+- [Integrations](integrations/borgmatic.md) — borgmatic, CrowdSec

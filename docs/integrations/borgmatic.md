@@ -19,7 +19,8 @@ hostname it ran on.
 
 ## Add a Matrix Application Service
 
-Follow the instructions in the [MATRIX.md](../../MATRIX.md) guide to set up a Matrix
+Follow the instructions in the
+[Matrix Application Service Setup](../getting-started/matrix-setup.md) guide to set up a Matrix
 Application Service for borgmatic and invite the bot user to a room on your Synapse server.
 
 ## Setup

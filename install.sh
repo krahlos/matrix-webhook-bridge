@@ -29,6 +29,7 @@ sed -i "s/<your_hs_token_here>/$HS_TOKEN/g" bridge-registration.yml
 echo ""
 echo "Done. Next steps:"
 echo "  1. Edit config/bridge.yml with your Matrix homeserver details"
-echo "  2. Register the Application Service with your homeserver (see INSTALL.md for details)"
+echo "  2. Register the Application Service with your homeserver"
+echo "     (see https://krahlos.github.io/matrix-webhook-bridge/getting-started/matrix-setup/)"
 echo "  3. (Optional) Set server.webhook_secret in config/bridge.yml to require auth"
 echo "  4. Start the bridge: docker compose up -d"
