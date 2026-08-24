@@ -31,16 +31,16 @@ Copy the script and systemd units to the appropriate locations and make the scri
 
 ```bash
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/notify-decisions.py \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/notify-decisions.py \
   -o /etc/crowdsec/notify-decisions.py
 chmod +x /etc/crowdsec/notify-decisions.py
 
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/crowdsec-decisions.service \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/crowdsec-decisions.service \
   -o /etc/systemd/system/crowdsec-decisions.service
 
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/crowdsec/crowdsec-decisions.timer \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/crowdsec-alert/crowdsec-decisions.timer \
   -o /etc/systemd/system/crowdsec-decisions.timer
 ```
 

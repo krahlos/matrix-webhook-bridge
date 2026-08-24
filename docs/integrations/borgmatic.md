@@ -30,7 +30,7 @@ Copy the `notify.py` script to `/etc/borgmatic/hooks` and make it executable:
 ```bash
 mkdir -p /etc/borgmatic/hooks
 curl \
-  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/contrib/borgmatic/notify.py \
+  -L https://raw.githubusercontent.com/krahlos/matrix-webhook-bridge/main/integrations/borgmatic/notify.py \
   -o /etc/borgmatic/hooks/notify.py
 chmod +x /etc/borgmatic/hooks/notify.py
 ```

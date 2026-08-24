@@ -1,6 +1,10 @@
 site_name: matrix-webhook-bridge
 site_url: https://krahlos.github.io/matrix-webhook-bridge/
+site_description: >-
+  A lightweight HTTP bridge that receives webhook payloads and forwards them as messages to a
+  Matrix room, impersonating per-sender bot users via an Application Service token.
 repo_url: https://github.com/krahlos/matrix-webhook-bridge
+edit_uri: edit/main/docs/
 nav:
   - Home: index.md
   - Getting Started:
@@ -21,6 +25,9 @@ markdown_extensions:
   - pymdownx.superfences
 theme:
   name: material
+  features:
+    - content.action.edit
+    - content.code.copy
   palette:
     # Palette toggle for automatic mode (system preference)
     - media: "(prefers-color-scheme)"
