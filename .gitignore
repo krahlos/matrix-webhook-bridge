@@ -9,6 +9,9 @@ dist/
 .eggs/
 uv.lock
 
+# mkdocs
+site/
+
 # Virtual environments
 .venv/
 venv/
