@@ -4,8 +4,8 @@
     {
       "customType": "regex",
       "datasourceTemplate": "github-tags",
-      "fileMatch": [
-        "^prek\\.toml$"
+      "managerFilePatterns": [
+        "/^prek\\.toml$/"
       ],
       "matchStrings": [
         "repo\\s*=\\s*\"https://github\\.com/(?<depName>[^\"]+?)(?:\\.git)?\"\\s*\\n(?:.*\\n)*?rev\\s*=\\s*\"(?<currentValue>[^\"]+)\""
