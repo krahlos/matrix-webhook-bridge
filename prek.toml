@@ -117,7 +117,7 @@ args = ["--ignore-vuln", "PYSEC-2026-196"]
 
 [[repos]]
 repo = "https://github.com/rhysd/actionlint"
-rev = "v1.7.7"
+rev = "v1.7.12"
 
 [[repos.hooks]]
 id = "actionlint"
