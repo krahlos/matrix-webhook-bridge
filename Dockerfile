@@ -1,5 +1,5 @@
 # 1) Build stage — installs the package into an isolated venv
-FROM python:3.12-slim AS build
+FROM python:3.14-slim AS build
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN pip install --no-cache-dir .
 
 
 # 2) Runtime stage
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 ARG MAINTAINER="unknown"
 ARG VERSION="0.0.0-dev"
