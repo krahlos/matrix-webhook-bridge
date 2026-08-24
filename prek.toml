@@ -107,7 +107,7 @@ args = ["-c", "pyproject.toml"]
 
 [[repos]]
 repo = "https://github.com/pypa/pip-audit"
-rev = "v2.8.0"
+rev = "v2.10.1"
 
 [[repos.hooks]]
 id = "pip-audit"
