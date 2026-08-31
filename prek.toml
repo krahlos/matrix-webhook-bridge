@@ -40,7 +40,7 @@ id = "trailing-whitespace"
 
 [[repos]]
 repo = "https://github.com/astral-sh/ruff-pre-commit"
-rev = "v0.16.4"
+rev = "v0.16.5"
 
 [[repos.hooks]]
 id = "ruff-check"
@@ -50,7 +50,7 @@ id = "ruff-format"
 
 [[repos]]
 repo = "https://github.com/astral-sh/ty-pre-commit"
-rev = "v0.0.74"
+rev = "v0.0.75"
 
 [[repos.hooks]]
 id = "ty"
@@ -150,7 +150,7 @@ args = ["--baseline", ".secrets.baseline"]
 
 [[repos]]
 repo = "https://github.com/renovatebot/pre-commit-hooks"
-rev = "44.39.2"
+rev = "44.52.1"
 
 [[repos.hooks]]
 id = "renovate-config-validator"
