@@ -11,6 +11,14 @@ inputs:
     description: "Path to the config file for testing"
     required: false
     default: "bridge.yml.example"
+  timeout-seconds:
+    description: "How long to let the server run before killing it"
+    required: false
+    default: "5"
+  expect-log:
+    description: "Optional substring that must appear in the server's log output"
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -25,9 +33,26 @@ runs:
       run: pip install "."
 
     - name: Test Startup
-      # Start the server in the background and kill it after 5 seconds.
-      # timeout returns 124 if the command was interrupted by the timeout,
-      # which means the server started successfully and stayed alive.
+      # Start the server and kill it after timeout-seconds. timeout returns
+      # 124 if the command was interrupted by the timeout, which means the
+      # server started successfully and stayed alive.
       shell: bash
       run: |
-        timeout 5s python dev_serve.py serve --config ${{ inputs.config-path }} || [ $? -eq 124 ]
+        log_file="$(mktemp)"
+        # Disable errexit: timeout's expected 124 exit would otherwise abort
+        # the script here (via pipefail) before the status check below runs.
+        set +e
+        timeout "${{ inputs.timeout-seconds }}s" python dev_serve.py serve \
+          --config "${{ inputs.config-path }}" 2>&1 | tee "$log_file"
+        status="${PIPESTATUS[0]}"
+        set -e
+        if [ "$status" -ne 124 ]; then
+          echo "Server exited early with status $status"
+          exit 1
+        fi
+
+        expected="${{ inputs.expect-log }}"
+        if [ -n "$expected" ] && ! grep -qF "$expected" "$log_file"; then
+          echo "Expected log line not found: $expected"
+          exit 1
+        fi
