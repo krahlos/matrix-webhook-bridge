@@ -455,6 +455,73 @@ server:
         Path(config_path).unlink()
 
 
+def test_load_config_rejects_bad_default_room_id():
+    """ConfigError raised when the top-level room_id has invalid format."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "not-a-room-id"
+  domain: example.com
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        with pytest.raises(ConfigError):
+            load_config_from_yaml(config_path)
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_rejects_bad_default_user():
+    """ConfigError raised when default_user has invalid localpart format."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  default_user: "../secret"
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        with pytest.raises(ConfigError):
+            load_config_from_yaml(config_path)
+    finally:
+        Path(config_path).unlink()
+
+
+def test_load_config_rejects_bad_service_user():
+    """ConfigError raised when a service_users value has invalid localpart format."""
+    yaml_content = """
+matrix:
+  base_url: https://matrix.example.com
+  room_id: "!test:example.com"
+  domain: example.com
+
+server:
+  service_users:
+    alertmanager: "../secret"
+"""
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:
+        f.write(yaml_content)
+        f.flush()
+        config_path = f.name
+
+    try:
+        with pytest.raises(ConfigError):
+            load_config_from_yaml(config_path)
+    finally:
+        Path(config_path).unlink()
+
+
 def test_load_config_empty_file():
     """ConfigError raised when YAML file is empty."""
     with tempfile.NamedTemporaryFile(mode="w", suffix=".yml", delete=False) as f:

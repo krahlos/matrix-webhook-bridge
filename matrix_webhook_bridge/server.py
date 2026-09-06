@@ -16,7 +16,7 @@ from fastapi import Depends, FastAPI, HTTPException, Query, Request
 from prometheus_client import make_asgi_app
 
 from . import metrics
-from .config import Config
+from .config import LOCALPART_PATTERN, ROOM_ID_PATTERN, Config
 from .formatters import SERVICES, format_generic
 from .log import request_id as _request_id
 from .matrix import available_tokens as _available_tokens
@@ -30,8 +30,8 @@ from .matrix import token_path as _token_path
 logger = logging.getLogger(__name__)
 
 _start_time = time.monotonic()
-_VALID_LOCALPART_RE = re.compile(r"^[a-z0-9._\-]+$")
-_VALID_ROOM_ID_RE = re.compile(r"^![^:]+:.+$")
+_VALID_LOCALPART_RE = re.compile(LOCALPART_PATTERN)
+_VALID_ROOM_ID_RE = re.compile(ROOM_ID_PATTERN)
 
 _TAGS = [
     {
@@ -60,6 +60,9 @@ def _pre_flight_check(config: Config) -> None:
                 f"Invalid user '{user}' for service '{svc}' in service_users. "
                 f"Must match [a-z0-9._-]+ to prevent path traversal."
             )
+
+    if not _VALID_ROOM_ID_RE.match(config.room_id):
+        raise RuntimeError(f"Invalid room_id '{config.room_id}'. Must match ^![^:]+:.+$ format.")
 
     for svc, rooms in config.service_rooms.items():
         for room_id in rooms:

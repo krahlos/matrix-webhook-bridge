@@ -6,7 +6,7 @@ from pathlib import Path
 import jsonschema
 import yaml
 
-from .config import Config
+from .config import LOCALPART_PATTERN, ROOM_ID_PATTERN, Config
 
 # JSON Schema for configuration validation
 CONFIG_SCHEMA = {
@@ -25,7 +25,7 @@ CONFIG_SCHEMA = {
                 },
                 "room_id": {
                     "type": "string",
-                    "minLength": 1,
+                    "pattern": ROOM_ID_PATTERN,
                     "description": "Target Matrix room ID",
                 },
                 "domain": {
@@ -59,6 +59,7 @@ CONFIG_SCHEMA = {
                 },
                 "default_user": {
                     "type": "string",
+                    "pattern": LOCALPART_PATTERN,
                     "default": "bridge",
                     "description": "Fallback Matrix user localpart",
                 },
@@ -69,15 +70,15 @@ CONFIG_SCHEMA = {
                 },
                 "service_users": {
                     "type": "object",
-                    "additionalProperties": {"type": "string", "minLength": 1},
+                    "additionalProperties": {"type": "string", "pattern": LOCALPART_PATTERN},
                     "description": "Map of service name to Matrix user localpart",
                 },
                 "service_rooms": {
                     "type": "object",
                     "patternProperties": {
-                        "^[a-z0-9._\\-]+$": {
+                        LOCALPART_PATTERN: {
                             "type": "array",
-                            "items": {"type": "string", "pattern": "^![^:]+:.+$"},
+                            "items": {"type": "string", "pattern": ROOM_ID_PATTERN},
                         }
                     },
                     "additionalProperties": False,
