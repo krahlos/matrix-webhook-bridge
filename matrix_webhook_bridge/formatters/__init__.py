@@ -3,6 +3,7 @@ from typing import Protocol
 
 from .alertmanager import format_alertmanager
 from .diun import format_diun
+from .grafana import format_grafana
 
 
 class Formatter(Protocol):
@@ -19,4 +20,5 @@ def format_generic(data: dict) -> list[tuple[str, str]]:
 SERVICES: dict[str, Formatter] = {
     "alertmanager": format_alertmanager,
     "diun": format_diun,
+    "grafana": format_grafana,
 }
