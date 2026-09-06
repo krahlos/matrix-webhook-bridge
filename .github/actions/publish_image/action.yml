@@ -85,22 +85,20 @@ runs:
           echo "EOF"
         } >> "$GITHUB_OUTPUT"
 
-    - name: Push image
-      uses: docker/build-push-action@v7
-      with:
-        context: .
-        file: Dockerfile
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ inputs.version }}
-          MAINTAINER=${{ inputs.maintainer }}
-          IMAGE_REVISION=${{ inputs.sha }}
-          BUILD_DATE=${{ inputs.build_date }}
-          SOURCE_URL=${{ inputs.server_url }}/${{ inputs.image_name }}
-        tags: ${{ steps.tags.outputs.list }}
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+    # Tag and push the exact image that was already built and smoke-tested
+    # above, rather than invoking docker/build-push-action a second time.
+    # Building the (possibly untrusted) Dockerfile twice would mean the
+    # smoke test and the published image aren't guaranteed to be the same
+    # bytes - a crafted Dockerfile could behave differently on the second
+    # build and slip an unverified image past the gate.
+    - name: Push the smoke-tested image
+      shell: bash
+      run: |
+        while IFS= read -r tag; do
+          [ -z "$tag" ] && continue
+          docker tag "matrix-webhook-bridge:${{ inputs.version }}-rc" "$tag"
+          docker push "$tag"
+        done <<< "${{ steps.tags.outputs.list }}"
 
     - name: Summary
       shell: bash
