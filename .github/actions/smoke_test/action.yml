@@ -38,11 +38,14 @@ runs:
       # server started successfully and stayed alive.
       shell: bash
       run: |
-        set -o pipefail
         log_file="$(mktemp)"
+        # Disable errexit: timeout's expected 124 exit would otherwise abort
+        # the script here (via pipefail) before the status check below runs.
+        set +e
         timeout "${{ inputs.timeout-seconds }}s" python dev_serve.py serve \
           --config "${{ inputs.config-path }}" 2>&1 | tee "$log_file"
         status="${PIPESTATUS[0]}"
+        set -e
         if [ "$status" -ne 124 ]; then
           echo "Server exited early with status $status"
           exit 1
