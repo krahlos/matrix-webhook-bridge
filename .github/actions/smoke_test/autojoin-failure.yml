@@ -1,0 +1,12 @@
+# Config fixture for the autojoin-failure smoke test.
+# base_url is unroutable on purpose: every autojoin call fails, exercising the
+# join -> invite -> retry-join fallback path without a real homeserver.
+matrix:
+  base_url: "http://127.0.0.1:1"
+  room_id: "!room:example.com"
+  domain: example.com
+  autojoin: true
+
+server:
+  port: 5001
+  default_user: bridge

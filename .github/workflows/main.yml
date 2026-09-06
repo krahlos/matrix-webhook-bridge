@@ -41,6 +41,19 @@ jobs:
       - name: Run Smoke Test
         uses: ./.github/actions/smoke_test
 
+  smoke-test-autojoin-failure:
+    name: Smoke Test (autojoin failure)
+    runs-on: ubuntu-latest
+    needs: run-tests
+    steps:
+      - uses: actions/checkout@v7
+      - name: Run Smoke Test
+        uses: ./.github/actions/smoke_test
+        with:
+          config-path: .github/actions/smoke_test/autojoin-failure.yml
+          timeout-seconds: "20"
+          expect-log: "autojoin failed: invite failed"
+
   build-image:
     name: Build Image
     runs-on: ubuntu-latest
