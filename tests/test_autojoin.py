@@ -67,3 +67,10 @@ class TestAutojoinAll:
     def test_autojoin_false_skipped_at_lifespan(self):
         config = _cfg(autojoin=False)
         assert not config.autojoin
+
+    def test_service_with_empty_room_list_falls_back_to_default_room(self):
+        config = _cfg(service_users={"svc": "svcbot"}, service_rooms={"svc": []})
+        with patch("matrix_webhook_bridge.server._join_room") as mock_join:
+            _autojoin_all(config)
+        called = [(c.args[3], c.args[1]) for c in mock_join.call_args_list]
+        assert ("@svcbot:example.com", "!default:example.com") in called

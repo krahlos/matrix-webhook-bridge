@@ -90,10 +90,7 @@ def _autojoin_all(config: Config) -> None:
     users_rooms: dict[str, set[str]] = {config.default_user: {config.room_id}}
     for svc in set(config.service_rooms) | set(config.service_users):
         user = resolve_user(svc, config)
-        # Presence-check, not resolve_rooms' truthy-check: an explicitly empty
-        # service_rooms list currently suppresses the default-room fallback
-        # here. Tracked as a divergence in #134.
-        rooms = config.service_rooms[svc] if svc in config.service_rooms else [config.room_id]
+        rooms = resolve_rooms(svc, None, config)
         users_rooms.setdefault(user, set()).update(rooms)
 
     for user, room_set in users_rooms.items():
