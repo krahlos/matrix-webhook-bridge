@@ -139,6 +139,8 @@ jobs:
             echo "IMAGE_REVISION=${{ github.sha }}"
           } >> "$GITHUB_ENV"
 
+      # This tag is local to the runner: load: true keeps it in the job's own
+      # Docker daemon for the smoke test below and it is never pushed anywhere.
       - name: Build image
         uses: docker/build-push-action@v7
         with:
@@ -146,7 +148,7 @@ jobs:
           file: Dockerfile
           push: false
           load: true
-          tags: matrix-webhook-bridge:ci
+          tags: matrix-webhook-bridge:pr-${{ github.event.number }}
           build-args: |
             VERSION=${{ env.IMAGE_VERSION }}
             MAINTAINER=${{ github.actor }}
@@ -157,4 +159,4 @@ jobs:
       - name: Run Docker Smoke Test
         uses: ./.github/actions/docker_smoke_test
         with:
-          image: matrix-webhook-bridge:ci
+          image: matrix-webhook-bridge:pr-${{ github.event.number }}
