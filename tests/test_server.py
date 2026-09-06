@@ -7,10 +7,12 @@ import pytest
 from starlette.testclient import TestClient
 
 from matrix_webhook_bridge.config import Config
+from matrix_webhook_bridge.formatters import Formatter
 from matrix_webhook_bridge.server import (
     _get_config,
     _pre_flight_check,
     app,
+    plan_deliveries,
     resolve_rooms,
     resolve_user,
 )
@@ -65,6 +67,38 @@ class TestResolveRooms:
     def test_no_service_rooms_configured_falls_back_to_global(self):
         config = _make_config()
         assert resolve_rooms("svc", None, config) == ["!default:example.com"]
+
+
+def _formatter(*messages: tuple[str, str]) -> Formatter:
+    return lambda data: list(messages)
+
+
+class TestPlanDeliveries:
+    def test_single_message_single_room(self):
+        format_fn = _formatter(("plain", "html"))
+        assert plan_deliveries({}, format_fn, ["!a:example.com"]) == [
+            ("plain", "html", "!a:example.com")
+        ]
+
+    def test_single_message_multiple_rooms(self):
+        format_fn = _formatter(("plain", "html"))
+        assert plan_deliveries({}, format_fn, ["!a:example.com", "!b:example.com"]) == [
+            ("plain", "html", "!a:example.com"),
+            ("plain", "html", "!b:example.com"),
+        ]
+
+    def test_multiple_messages_multiple_rooms(self):
+        format_fn = _formatter(("p1", "h1"), ("p2", "h2"))
+        assert plan_deliveries({}, format_fn, ["!a:example.com", "!b:example.com"]) == [
+            ("p1", "h1", "!a:example.com"),
+            ("p1", "h1", "!b:example.com"),
+            ("p2", "h2", "!a:example.com"),
+            ("p2", "h2", "!b:example.com"),
+        ]
+
+    def test_no_messages_yields_no_deliveries(self):
+        format_fn = _formatter()
+        assert plan_deliveries({}, format_fn, ["!a:example.com"]) == []
 
 
 class TestResolveUser:
