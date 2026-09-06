@@ -1,3 +1,8 @@
+"""Formatter for Prometheus Alertmanager's webhook receiver.
+
+Payload schema: https://prometheus.io/docs/alerting/latest/notifications/#webhook
+"""
+
 from html import escape
 
 
