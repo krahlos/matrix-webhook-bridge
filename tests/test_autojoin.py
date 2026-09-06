@@ -74,3 +74,67 @@ class TestAutojoinAll:
             _autojoin_all(config)
         called = [(c.args[3], c.args[1]) for c in mock_join.call_args_list]
         assert ("@svcbot:example.com", "!default:example.com") in called
+
+    def test_join_failure_falls_back_to_invite_then_retry(self):
+        config = _cfg(service_users={"svc": "svcbot"}, service_rooms={"svc": ["!room:example.com"]})
+
+        target_room_attempts = {"n": 0}
+
+        def join_side_effect(base_url, room_id, token_file, user_id, timeout):
+            if room_id == "!room:example.com":
+                target_room_attempts["n"] += 1
+                if target_room_attempts["n"] == 1:
+                    raise Exception("not invited")
+
+        with (
+            patch(
+                "matrix_webhook_bridge.server._join_room", side_effect=join_side_effect
+            ) as mock_join,
+            patch("matrix_webhook_bridge.server._invite_room") as mock_invite,
+        ):
+            _autojoin_all(config)
+        mock_invite.assert_called_once_with(
+            "https://matrix.example.com",
+            "!room:example.com",
+            ANY,
+            "@bridge:example.com",
+            "@svcbot:example.com",
+            5,
+        )
+        svcbot_joins = [c for c in mock_join.call_args_list if c.args[3] == "@svcbot:example.com"]
+        assert len(svcbot_joins) == 2
+
+    def test_invite_failure_is_logged_distinctly_and_does_not_retry_join(self, caplog):
+        config = _cfg(service_users={"svc": "svcbot"}, service_rooms={"svc": ["!room:example.com"]})
+        with (
+            patch(
+                "matrix_webhook_bridge.server._join_room",
+                side_effect=Exception("not invited"),
+            ) as mock_join,
+            patch(
+                "matrix_webhook_bridge.server._invite_room",
+                side_effect=Exception("insufficient power level"),
+            ),
+            caplog.at_level(logging.ERROR),
+        ):
+            _autojoin_all(config)
+        assert any("autojoin failed: invite failed" in r.getMessage() for r in caplog.records)
+        svcbot_joins = [c for c in mock_join.call_args_list if c.args[3] == "@svcbot:example.com"]
+        assert len(svcbot_joins) == 1
+
+    def test_join_after_invite_failure_is_logged_distinctly(self, caplog):
+        config = _cfg(service_users={"svc": "svcbot"}, service_rooms={"svc": ["!room:example.com"]})
+        with (
+            patch(
+                "matrix_webhook_bridge.server._join_room",
+                side_effect=Exception("not invited"),
+            ) as mock_join,
+            patch("matrix_webhook_bridge.server._invite_room"),
+            caplog.at_level(logging.ERROR),
+        ):
+            _autojoin_all(config)
+        assert any(
+            "autojoin failed: join after invite failed" in r.getMessage() for r in caplog.records
+        )
+        svcbot_joins = [c for c in mock_join.call_args_list if c.args[3] == "@svcbot:example.com"]
+        assert len(svcbot_joins) == 2

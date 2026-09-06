@@ -148,6 +148,33 @@ def join_room(
     _with_retry(attempt)
 
 
+def invite_room(
+    base_url: str,
+    room_id: str,
+    token_file: str,
+    inviter_user_id: str,
+    invitee_user_id: str,
+    timeout: int = 5,
+) -> None:
+    """Invite invitee_user_id to a room, sent as inviter_user_id."""
+    path = (
+        f"/_matrix/client/v3/rooms/{quote(room_id, safe='')}"
+        f"/invite?user_id={quote(inviter_user_id, safe='')}"
+    )
+    payload = json.dumps({"user_id": invitee_user_id}).encode()
+
+    def attempt():
+        headers = {
+            "Authorization": f"Bearer {_token(token_file)}",
+            "Content-Type": "application/json",
+        }
+        logger.debug("Inviting %s to room %s as %s", invitee_user_id, room_id, inviter_user_id)
+        _do_request(base_url, "POST", path, payload, headers, timeout)
+        logger.info("Invited %s to room %s as %s", invitee_user_id, room_id, inviter_user_id)
+
+    _with_retry(attempt)
+
+
 def probe(base_url: str, timeout: int = 5) -> None:
     """GET /_matrix/client/versions to check homeserver reachability."""
     _do_request(base_url, "GET", VERSIONS_PATH, None, {}, timeout)

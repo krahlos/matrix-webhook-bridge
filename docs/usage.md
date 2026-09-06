@@ -63,5 +63,8 @@ The bridge derives the set of (user, room) pairs from the config:
 - Each entry in `service_rooms` is joined by the matching `service_users` entry, or `default_user`
   if no explicit mapping exists
 
-Joining a room the bot is already in is a no-op. A failed join is logged as an error but does not
-prevent the bridge from starting.
+Joining a room the bot is already in is a no-op. If a join fails (e.g. an invite-only room and the
+bot was never invited), the bridge retries once: `default_user` sends an invite to the bot, then
+the join is attempted again. This requires `default_user` to already have invite permission in
+that room (moderator-level by default on most homeservers) — if it doesn't, the invite itself
+fails and both failures are logged as errors, but the bridge still starts.
