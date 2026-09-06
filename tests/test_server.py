@@ -143,3 +143,8 @@ class TestPreFlightServiceRooms:
         config = _make_config(service_rooms={"svc": ["room:example.com"]})
         with pytest.raises(RuntimeError, match="Invalid room_id"):
             _pre_flight_check(config)
+
+    def test_rejects_invalid_default_room_id(self, tokens_dir):
+        config = _make_config(room_id="not-a-room-id")
+        with pytest.raises(RuntimeError, match="Invalid room_id"):
+            _pre_flight_check(config)

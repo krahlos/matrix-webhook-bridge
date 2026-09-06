@@ -1,5 +1,10 @@
 from dataclasses import dataclass, field
 
+# Shared with config_loader.py's CONFIG_SCHEMA so the YAML-load-time check and
+# server.py's pre-flight check can't drift apart.
+LOCALPART_PATTERN = r"^[a-z0-9._\-]+$"
+ROOM_ID_PATTERN = r"^![^:]+:.+$"
+
 
 @dataclass
 class Config:
