@@ -1,0 +1,112 @@
+---
+
+name: "PR Preview Image"
+run-name: "PR Preview Image · #${{ github.event.pull_request.number }}"
+
+# pull_request_target runs with the base repo's token/secrets even though it
+# builds a PR's code - see the two gates below before touching that lightly.
+on:
+  pull_request_target:
+    types: [labeled, synchronize, closed]
+
+concurrency:
+  group: pr-preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  packages: write
+  pull-requests: write
+
+jobs:
+  publish:
+    name: Publish Preview Image
+    runs-on: ubuntu-latest
+    # Gate 1 (opt-in): only maintainers can label PRs, so this is a
+    # maintainer-only switch, re-checked on every push (synchronize).
+    # Gate 2 (review): the pr-preview environment requires manual approval
+    # before this job runs, so someone has to look before untrusted PR code
+    # is built and pushed with our credentials.
+    if: >-
+      github.event.action != 'closed' &&
+      contains(github.event.pull_request.labels.*.name, 'pr/publish-image')
+    environment: pr-preview
+    steps:
+      - name: Checkout PR head
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Set Build Metadata
+        id: meta
+        run: echo "date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")" >> "$GITHUB_OUTPUT"
+
+      - name: Publish image
+        uses: ./.github/actions/publish_image
+        with:
+          registry: ghcr.io
+          image_name: ${{ github.repository }}
+          version: pr-${{ github.event.pull_request.number }}
+          maintainer: ${{ vars.MAINTAINER }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ github.event.pull_request.head.sha }}
+          build_date: ${{ steps.meta.outputs.date }}
+          server_url: ${{ github.server_url }}
+          also_tag_latest: "false"
+
+      - name: Comment pull command on PR
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const marker = "<!-- pr-preview-image -->";
+            const tag = `pr-${context.payload.pull_request.number}`;
+            const image = `ghcr.io/${context.repo.owner}/${context.repo.repo}:${tag}`;
+            const body = `${marker}\n**Preview image published**\n\n\`\`\`\ndocker pull ${image}\n\`\`\``;
+
+            const comments = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.payload.pull_request.number,
+            });
+            const existing = comments.data.find((c) => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.payload.pull_request.number,
+                body,
+              });
+            }
+
+  cleanup:
+    name: Delete Preview Image
+    runs-on: ubuntu-latest
+    if: github.event.action == 'closed'
+    env:
+      # Deleting a personal-account package version needs a PAT with
+      # delete:packages scope - GITHUB_TOKEN cannot delete packages.
+      GH_TOKEN: ${{ secrets.RELEASE_TOKEN }}
+    steps:
+      - name: Delete pr-<number> package version
+        run: |
+          tag="pr-${{ github.event.pull_request.number }}"
+          package="${{ github.event.repository.name }}"
+
+          version_id=$(gh api "/user/packages/container/${package}/versions" --paginate \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${tag}\") | .id" | head -n1)
+
+          if [ -z "$version_id" ]; then
+            echo "No package version tagged ${tag} found, nothing to clean up."
+            exit 0
+          fi
+
+          gh api -X DELETE "/user/packages/container/${package}/versions/${version_id}"
+          echo "Deleted package version ${version_id} (tag ${tag})"

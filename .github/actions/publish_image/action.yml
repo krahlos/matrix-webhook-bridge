@@ -28,6 +28,10 @@ inputs:
   server_url:
     description: "GitHub server URL for OCI source label"
     required: true
+  also_tag_latest:
+    description: "Whether to also push the :latest tag"
+    required: false
+    default: "true"
 
 runs:
   using: composite
@@ -67,6 +71,20 @@ runs:
       with:
         image: matrix-webhook-bridge:${{ inputs.version }}-rc
 
+    - name: Compute push tags
+      id: tags
+      shell: bash
+      run: |
+        tags="${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}"
+        if [ "${{ inputs.also_tag_latest }}" = "true" ]; then
+          tags="${tags}"$'\n'"${{ inputs.registry }}/${{ inputs.image_name }}:latest"
+        fi
+        {
+          echo "list<<EOF"
+          echo "$tags"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Push image
       uses: docker/build-push-action@v7
       with:
@@ -80,9 +98,7 @@ runs:
           IMAGE_REVISION=${{ inputs.sha }}
           BUILD_DATE=${{ inputs.build_date }}
           SOURCE_URL=${{ inputs.server_url }}/${{ inputs.image_name }}
-        tags: |
-          ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}
-          ${{ inputs.registry }}/${{ inputs.image_name }}:latest
+        tags: ${{ steps.tags.outputs.list }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
@@ -95,4 +111,6 @@ runs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
         echo "- \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.also_tag_latest }}" = "true" ]; then
+          echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+        fi
