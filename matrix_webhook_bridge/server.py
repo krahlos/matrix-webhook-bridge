@@ -21,6 +21,7 @@ from .formatters import SERVICES, format_generic
 from .log import request_id as _request_id
 from .matrix import available_tokens as _available_tokens
 from .matrix import clear_token_cache as _clear_token_cache
+from .matrix import invite_room as _invite_room
 from .matrix import join_room as _join_room
 from .matrix import notify as _matrix_notify
 from .matrix import probe as _matrix_probe
@@ -93,6 +94,7 @@ def _autojoin_all(config: Config) -> None:
         rooms = resolve_rooms(svc, None, config)
         users_rooms.setdefault(user, set()).update(rooms)
 
+    inviter_user_id = f"@{config.default_user}:{config.domain}"
     for user, room_set in users_rooms.items():
         user_id = f"@{user}:{config.domain}"
         for room_id in sorted(room_set):
@@ -104,9 +106,40 @@ def _autojoin_all(config: Config) -> None:
                     user_id,
                     config.matrix_timeout,
                 )
+                continue
+            except Exception as e:
+                logger.warning(
+                    "join failed, attempting invite",
+                    extra={"user": user, "room": room_id, "error": str(e)},
+                )
+
+            try:
+                _invite_room(
+                    config.base_url,
+                    room_id,
+                    _token_path(config.default_user),
+                    inviter_user_id,
+                    user_id,
+                    config.matrix_timeout,
+                )
             except Exception as e:
                 logger.error(
-                    "autojoin failed",
+                    "autojoin failed: invite failed",
+                    extra={"user": user, "room": room_id, "error": str(e)},
+                )
+                continue
+
+            try:
+                _join_room(
+                    config.base_url,
+                    room_id,
+                    _token_path(user),
+                    user_id,
+                    config.matrix_timeout,
+                )
+            except Exception as e:
+                logger.error(
+                    "autojoin failed: join after invite failed",
                     extra={"user": user, "room": room_id, "error": str(e)},
                 )
 

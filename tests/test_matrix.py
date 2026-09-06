@@ -151,6 +151,54 @@ def test_join_room_4xx_raises_immediately(tmp_path):
     assert exc_info.value.code == 403
 
 
+def test_invite_room_success_path(tmp_path):
+    token = tmp_path / "user_as_token.txt"
+    token.write_text("test-token\n")
+    matrix_mod._token.cache_clear()
+
+    with patch.object(matrix_mod, "_do_request", return_value=b"") as mock_request:
+        matrix_mod.invite_room(
+            base_url="https://matrix.example.org",
+            room_id="!room:example.org",
+            token_file=str(token),
+            inviter_user_id="@admin:example.org",
+            invitee_user_id="@newbot:example.org",
+            timeout=5,
+        )
+    mock_request.assert_called_once()
+    args = mock_request.call_args.args
+    assert args[1] == "POST"
+    assert "/rooms/%21room%3Aexample.org/invite" in args[2]
+    assert "user_id=%40admin%3Aexample.org" in args[2]
+    assert json.loads(args[3]) == {"user_id": "@newbot:example.org"}
+
+
+def test_invite_room_4xx_raises_immediately(tmp_path):
+    token = tmp_path / "user_as_token.txt"
+    token.write_text("test-token\n")
+    matrix_mod._token.cache_clear()
+
+    err = HTTPError(
+        url="https://matrix.example.org/_matrix/client/v3/rooms/!room:example.org/invite",
+        code=403,
+        msg="Forbidden",
+        hdrs=None,
+        fp=io.BytesIO(b'{"errcode":"M_FORBIDDEN"}'),
+    )
+
+    with patch.object(matrix_mod, "_do_request", side_effect=err):
+        with pytest.raises(HTTPError) as exc_info:
+            matrix_mod.invite_room(
+                base_url="https://matrix.example.org",
+                room_id="!room:example.org",
+                token_file=str(token),
+                inviter_user_id="@admin:example.org",
+                invitee_user_id="@newbot:example.org",
+                timeout=5,
+            )
+    assert exc_info.value.code == 403
+
+
 def test_token_path_uses_tokens_dir(monkeypatch, tmp_path):
     monkeypatch.setattr(matrix_mod, "_TOKENS_DIR", str(tmp_path))
     assert matrix_mod.token_path("alice") == f"{tmp_path}/alice_as_token.txt"
