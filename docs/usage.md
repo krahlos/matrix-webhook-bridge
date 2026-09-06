@@ -68,3 +68,10 @@ bot was never invited), the bridge retries once: `default_user` sends an invite 
 the join is attempted again. This requires `default_user` to already have invite permission in
 that room (moderator-level by default on most homeservers) — if it doesn't, the invite itself
 fails and both failures are logged as errors, but the bridge still starts.
+
+This invite fallback cannot bootstrap `default_user` into `matrix.room_id` itself: the inviter is
+always `default_user`, so for its own room that means `default_user` would have to invite itself,
+which Matrix does not allow (you need to already be a joined member with invite power to invite
+anyone). **You must manually invite `default_user` into `matrix.room_id` before the first startup.**
+The fallback only ever helps other bot users (service bots) — and only once `default_user` already
+has invite power in the room they're being invited to.
