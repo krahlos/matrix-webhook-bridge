@@ -51,12 +51,13 @@ See [Usage](docs/usage.md) for query parameters, multi-room routing, and autojoi
 
 ## Integrations
 
-The bridge ships a built-in formatter for Alertmanager and ready-to-use notification scripts for
-other tools in [`integrations/`](integrations/).
+The bridge ships built-in formatters for Alertmanager, Grafana and Diun, plus ready-to-use
+notification scripts for other tools in [`integrations/`](integrations/).
 
 | Tool | Type | `?service=` value | Description |
 | -------------------------------------------------------------- | ----------------- | ------------------ | --------------------------------------------------------- |
 | Prometheus Alertmanager | built-in | `alertmanager` | Colour-coded alerts with severity, description and links |
+| Grafana (unified alerting) | built-in | `grafana` | Colour-coded alerts with severity, description and links |
 | [borgmatic](docs/integrations/borgmatic.md) | standalone script | — | Backup job success/failure notifications |
 | [CrowdSec alert](docs/integrations/crowdsec-alert.md) | standalone script | — | Per-decision ban/unban alerts |
 | [CrowdSec summary](docs/integrations/crowdsec-summary.md) | standalone script | — | Daily digest of top attackers and blocked IPs |

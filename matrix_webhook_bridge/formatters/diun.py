@@ -1,3 +1,8 @@
+"""Formatter for Diun's webhook notifier.
+
+Payload schema: https://crazymax.dev/diun/notif/webhook/
+"""
+
 from datetime import datetime
 
 
