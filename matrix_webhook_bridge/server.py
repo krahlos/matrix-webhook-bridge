@@ -17,7 +17,7 @@ from prometheus_client import make_asgi_app
 
 from . import metrics
 from .config import LOCALPART_PATTERN, ROOM_ID_PATTERN, Config
-from .formatters import SERVICES, format_generic
+from .formatters import SERVICES, Formatter, format_generic
 from .log import request_id as _request_id
 from .matrix import available_tokens as _available_tokens
 from .matrix import clear_token_cache as _clear_token_cache
@@ -128,6 +128,14 @@ def resolve_rooms(
     if service and config.service_rooms.get(service):
         return config.service_rooms[service]
     return [config.room_id]
+
+
+def plan_deliveries(
+    data: dict,
+    format_fn: Formatter,
+    rooms: list[str],
+) -> list[tuple[str, str, str]]:
+    return [(plain, html, room_id) for plain, html in format_fn(data) for room_id in rooms]
 
 
 def _format_uptime(seconds: int) -> str:
@@ -273,27 +281,26 @@ async def notify(
 
     rooms = resolve_rooms(service, room, config)
     failed = False
-    for plain, html in format_fn(data):
-        for room_id in rooms:
-            try:
-                await asyncio.to_thread(
-                    _matrix_notify,
-                    config.base_url,
-                    room_id,
-                    plain,
-                    html,
-                    _token_path(user),
-                    user_id,
-                    config.matrix_timeout,
-                )
-                metrics.notify_success_total.labels(service=service or "").inc()
-            except Exception as e:
-                logger.error(
-                    "notify failed",
-                    extra={"service": service, "user": user, "room": room_id, "error": str(e)},
-                )
-                metrics.notify_failure_total.labels(service=service or "").inc()
-                failed = True
+    for plain, html, room_id in plan_deliveries(data, format_fn, rooms):
+        try:
+            await asyncio.to_thread(
+                _matrix_notify,
+                config.base_url,
+                room_id,
+                plain,
+                html,
+                _token_path(user),
+                user_id,
+                config.matrix_timeout,
+            )
+            metrics.notify_success_total.labels(service=service or "").inc()
+        except Exception as e:
+            logger.error(
+                "notify failed",
+                extra={"service": service, "user": user, "room": room_id, "error": str(e)},
+            )
+            metrics.notify_failure_total.labels(service=service or "").inc()
+            failed = True
 
     if failed:
         raise HTTPException(status_code=500)
