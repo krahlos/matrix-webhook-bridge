@@ -12,6 +12,7 @@ from matrix_webhook_bridge.server import (
     _pre_flight_check,
     app,
     resolve_rooms,
+    resolve_user,
 )
 
 
@@ -64,6 +65,20 @@ class TestResolveRooms:
     def test_no_service_rooms_configured_falls_back_to_global(self):
         config = _make_config()
         assert resolve_rooms("svc", None, config) == ["!default:example.com"]
+
+
+class TestResolveUser:
+    def test_no_service_uses_default_user(self):
+        config = _make_config()
+        assert resolve_user(None, config) == "bridge"
+
+    def test_known_service_uses_configured_user(self):
+        config = _make_config(service_users={"svc": "svcbot"})
+        assert resolve_user("svc", config) == "svcbot"
+
+    def test_unknown_service_falls_back_to_default_user(self):
+        config = _make_config(service_users={"svc": "svcbot"})
+        assert resolve_user("other", config) == "bridge"
 
 
 @pytest.mark.usefixtures("_mock_tokens")

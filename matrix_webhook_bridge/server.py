@@ -88,12 +88,13 @@ def _pre_flight_check(config: Config) -> None:
 
 def _autojoin_all(config: Config) -> None:
     users_rooms: dict[str, set[str]] = {config.default_user: {config.room_id}}
-    for svc, rooms in config.service_rooms.items():
-        user = config.service_users.get(svc, config.default_user)
+    for svc in set(config.service_rooms) | set(config.service_users):
+        user = resolve_user(svc, config)
+        # Presence-check, not resolve_rooms' truthy-check: an explicitly empty
+        # service_rooms list currently suppresses the default-room fallback
+        # here. Tracked as a divergence in #134.
+        rooms = config.service_rooms[svc] if svc in config.service_rooms else [config.room_id]
         users_rooms.setdefault(user, set()).update(rooms)
-    for svc, user in config.service_users.items():
-        if svc not in config.service_rooms:
-            users_rooms.setdefault(user, set()).add(config.room_id)
 
     for user, room_set in users_rooms.items():
         user_id = f"@{user}:{config.domain}"
@@ -111,6 +112,10 @@ def _autojoin_all(config: Config) -> None:
                     "autojoin failed",
                     extra={"user": user, "room": room_id, "error": str(e)},
                 )
+
+
+def resolve_user(service: str | None, config: Config) -> str:
+    return config.service_users.get(service, config.default_user)
 
 
 def resolve_rooms(
@@ -253,8 +258,7 @@ async def notify(
         metrics.invalid_payload_total.labels(service=service or "").inc()
         raise HTTPException(status_code=400)
 
-    user = config.service_users.get(service) if service else None
-    user = user or config.default_user
+    user = resolve_user(service, config)
     format_fn = SERVICES.get(service, format_generic) if service else format_generic
     user_id = f"@{user}:{config.domain}"
 
