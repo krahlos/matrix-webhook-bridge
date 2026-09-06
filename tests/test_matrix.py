@@ -149,3 +149,49 @@ def test_join_room_4xx_raises_immediately(tmp_path):
                 timeout=5,
             )
     assert exc_info.value.code == 403
+
+
+def test_token_path_uses_tokens_dir(monkeypatch, tmp_path):
+    monkeypatch.setattr(matrix_mod, "_TOKENS_DIR", str(tmp_path))
+    assert matrix_mod.token_path("alice") == f"{tmp_path}/alice_as_token.txt"
+
+
+def test_token_exists(monkeypatch, tmp_path):
+    monkeypatch.setattr(matrix_mod, "_TOKENS_DIR", str(tmp_path))
+    (tmp_path / "alice_as_token.txt").write_text("tok")
+    assert matrix_mod.token_exists("alice") is True
+    assert matrix_mod.token_exists("bob") is False
+
+
+def test_available_tokens_splits_valid_and_invalid(monkeypatch, tmp_path):
+    monkeypatch.setattr(matrix_mod, "_TOKENS_DIR", str(tmp_path))
+    (tmp_path / "alice_as_token.txt").write_text("tok")
+    (tmp_path / "bob_as_token.txt").write_text("tok")
+    (tmp_path / "unexpected.txt").write_text("x")
+
+    scan = matrix_mod.available_tokens()
+
+    assert scan.valid == ["alice", "bob"]
+    assert scan.invalid == ["unexpected.txt"]
+
+
+def test_available_tokens_missing_dir_returns_empty(monkeypatch, tmp_path):
+    monkeypatch.setattr(matrix_mod, "_TOKENS_DIR", str(tmp_path / "missing"))
+    scan = matrix_mod.available_tokens()
+    assert scan.valid == []
+    assert scan.invalid == []
+
+
+def test_clear_token_cache(tmp_path):
+    token = tmp_path / "user_as_token.txt"
+    token.write_text("first")
+    path = str(token)
+
+    matrix_mod._token.cache_clear()
+    assert matrix_mod._token(path) == "first"
+
+    token.write_text("second")
+    assert matrix_mod._token(path) == "first"  # still cached
+
+    matrix_mod.clear_token_cache()
+    assert matrix_mod._token(path) == "second"

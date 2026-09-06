@@ -1,7 +1,10 @@
 import io
 import json
 import logging
+import os
+import re
 import time
+from dataclasses import dataclass
 from email.message import Message as HTTPMessage
 from functools import lru_cache
 from urllib.error import HTTPError, URLError
@@ -16,10 +19,50 @@ logger = logging.getLogger(__name__)
 
 _TOKENS_DIR: str = "/tokens"
 _RETRY_DELAYS = (1, 2, 4)  # seconds before attempts 2, 3, 4
+_AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
 
 
-def _token_path(user: str) -> str:
+def token_path(user: str) -> str:
+    """Return the on-disk path for user's appservice token."""
     return f"{_TOKENS_DIR}/{user}_as_token.txt"
+
+
+def token_exists(user: str) -> bool:
+    """Return whether user's appservice token file exists on disk."""
+    return os.path.isfile(token_path(user))
+
+
+@dataclass
+class TokenScan:
+    valid: list[str]
+    invalid: list[str]
+
+
+def available_tokens() -> TokenScan:
+    """Scan _TOKENS_DIR for appservice token files.
+
+    Returns the users with a correctly named token file, and the entries
+    that don't follow the <user>_as_token.txt naming convention.
+    """
+    try:
+        entries = os.listdir(_TOKENS_DIR)
+    except FileNotFoundError:
+        entries = []
+
+    valid: list[str] = []
+    invalid: list[str] = []
+    for entry in sorted(entries):
+        m = _AS_TOKEN_RE.match(entry)
+        if m:
+            valid.append(m.group(1))
+        else:
+            invalid.append(entry)
+    return TokenScan(valid=valid, invalid=invalid)
+
+
+def clear_token_cache() -> None:
+    """Clear the cached token contents, forcing a re-read from disk."""
+    _token.cache_clear()
 
 
 @lru_cache

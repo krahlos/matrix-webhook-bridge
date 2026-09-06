@@ -2,7 +2,6 @@ import asyncio
 import hmac
 import json
 import logging
-import os
 import re
 import signal
 import threading
@@ -20,15 +19,17 @@ from . import metrics
 from .config import Config
 from .formatters import SERVICES, format_generic
 from .log import request_id as _request_id
-from .matrix import _TOKENS_DIR, _token, _token_path
+from .matrix import available_tokens as _available_tokens
+from .matrix import clear_token_cache as _clear_token_cache
 from .matrix import join_room as _join_room
 from .matrix import notify as _matrix_notify
 from .matrix import probe as _matrix_probe
+from .matrix import token_exists as _token_exists
+from .matrix import token_path as _token_path
 
 logger = logging.getLogger(__name__)
 
 _start_time = time.monotonic()
-_AS_TOKEN_RE = re.compile(r"^(.+)_as_token\.txt$")
 _VALID_LOCALPART_RE = re.compile(r"^[a-z0-9._\-]+$")
 _VALID_ROOM_ID_RE = re.compile(r"^![^:]+:.+$")
 
@@ -68,31 +69,21 @@ def _pre_flight_check(config: Config) -> None:
                     f"Must match ^![^:]+:.+$ format."
                 )
 
-    default_user_token_path = _token_path(config.default_user)
-    if not os.path.isfile(default_user_token_path):
+    if not _token_exists(config.default_user):
         raise RuntimeError(
-            f"Required secret not found: {default_user_token_path}. "
+            f"Required secret not found: {_token_path(config.default_user)}. "
             f"Cannot start server without appservice token for default user "
             f"'{config.default_user}'."
         )
 
-    available_tokens: list[str] = []
-    try:
-        entries = os.listdir(_TOKENS_DIR)
-    except FileNotFoundError:
-        entries = []
+    scan = _available_tokens()
+    for entry in scan.invalid:
+        logger.warning(
+            "Secret file does not follow naming convention <name>_as_token.txt: %s",
+            entry,
+        )
 
-    for entry in sorted(entries):
-        m = _AS_TOKEN_RE.match(entry)
-        if m:
-            available_tokens.append(m.group(1))
-        else:
-            logger.warning(
-                "Secret file does not follow naming convention <name>_as_token.txt: %s",
-                entry,
-            )
-
-    logger.info("Available appservice tokens: %s", ", ".join(available_tokens))
+    logger.info("Available appservice tokens: %s", ", ".join(scan.valid))
 
 
 def _autojoin_all(config: Config) -> None:
@@ -150,11 +141,11 @@ async def _lifespan(app: FastAPI):
     if threading.current_thread() is threading.main_thread():
         loop = asyncio.get_running_loop()
 
-        def _clear_token_cache() -> None:
-            _token.cache_clear()
+        def _on_sighup() -> None:
+            _clear_token_cache()
             logger.info("Token cache cleared via SIGHUP")
 
-        loop.add_signal_handler(signal.SIGHUP, _clear_token_cache)
+        loop.add_signal_handler(signal.SIGHUP, _on_sighup)
     yield
 
 

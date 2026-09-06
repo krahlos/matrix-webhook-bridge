@@ -9,7 +9,6 @@ from matrix_webhook_bridge.server import _pre_flight_check
 @pytest.fixture
 def tokens_dir(tmp_path, monkeypatch):
     monkeypatch.setattr("matrix_webhook_bridge.matrix._TOKENS_DIR", str(tmp_path))
-    monkeypatch.setattr("matrix_webhook_bridge.server._TOKENS_DIR", str(tmp_path))
     return tmp_path
 
 
