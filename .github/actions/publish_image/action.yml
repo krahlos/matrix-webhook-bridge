@@ -42,7 +42,32 @@ runs:
         username: ${{ github.actor }}
         password: ${{ inputs.token }}
 
-    - name: Build and push image
+    # This tag is local to the runner: load: true keeps it in the job's own
+    # Docker daemon for the smoke test below and it is never pushed anywhere.
+    - name: Build image
+      uses: docker/build-push-action@v7
+      with:
+        context: .
+        file: Dockerfile
+        platforms: linux/amd64
+        push: false
+        load: true
+        tags: matrix-webhook-bridge:${{ inputs.version }}-rc
+        build-args: |
+          VERSION=${{ inputs.version }}
+          MAINTAINER=${{ inputs.maintainer }}
+          IMAGE_REVISION=${{ inputs.sha }}
+          BUILD_DATE=${{ inputs.build_date }}
+          SOURCE_URL=${{ inputs.server_url }}/${{ inputs.image_name }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Run Docker Smoke Test
+      uses: ./.github/actions/docker_smoke_test
+      with:
+        image: matrix-webhook-bridge:${{ inputs.version }}-rc
+
+    - name: Push image
       uses: docker/build-push-action@v7
       with:
         context: .
