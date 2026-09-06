@@ -1,0 +1,63 @@
+---
+name: "Docker Image Smoke Test"
+description: "Runs the built image and verifies it becomes healthy"
+
+inputs:
+  image:
+    description: "Image tag to run (must already be loaded into the local Docker daemon)"
+    required: true
+  config-path:
+    description: "Path to the config file to mount into the container"
+    required: false
+    default: "bridge.yml.example"
+  port:
+    description: "Port the bridge listens on"
+    required: false
+    default: "5001"
+  timeout-seconds:
+    description: "How long to wait for the container to become healthy"
+    required: false
+    default: "30"
+
+runs:
+  using: composite
+  steps:
+    - name: Run image and wait for health
+      shell: bash
+      run: |
+        set -o pipefail
+
+        tokens_dir="$(mktemp -d)"
+        echo "fake_token_for_ci" > "$tokens_dir/bridge_as_token.txt"
+        # The container runs as a fixed non-root uid; make sure it can read
+        # the bind-mounted token regardless of the host runner's uid.
+        chmod 755 "$tokens_dir"
+        chmod 644 "$tokens_dir/bridge_as_token.txt"
+
+        container="$(docker run -d \
+          -p "${{ inputs.port }}:${{ inputs.port }}" \
+          -e "PORT=${{ inputs.port }}" \
+          -v "$(pwd)/${{ inputs.config-path }}:/etc/matrix-webhook-bridge/bridge.yml:ro" \
+          -v "$tokens_dir:/tokens:ro" \
+          "${{ inputs.image }}")"
+
+        cleanup() {
+          docker logs "$container" || true
+          docker rm -f "$container" > /dev/null || true
+        }
+        trap cleanup EXIT
+
+        deadline=$((SECONDS + ${{ inputs.timeout-seconds }}))
+        until curl -sf "http://localhost:${{ inputs.port }}/healthy" > /dev/null; do
+          if [ "$(docker inspect -f '{{.State.Running}}' "$container")" != "true" ]; then
+            echo "Container exited before becoming healthy"
+            exit 1
+          fi
+          if [ "$SECONDS" -ge "$deadline" ]; then
+            echo "Container never became healthy within ${{ inputs.timeout-seconds }}s"
+            exit 1
+          fi
+          sleep 1
+        done
+
+        echo "Container is healthy"

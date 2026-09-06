@@ -145,9 +145,16 @@ jobs:
           context: .
           file: Dockerfile
           push: false
+          load: true
+          tags: matrix-webhook-bridge:ci
           build-args: |
             VERSION=${{ env.IMAGE_VERSION }}
             MAINTAINER=${{ github.actor }}
             IMAGE_REVISION=${{ env.IMAGE_REVISION }}
             BUILD_DATE=${{ env.BUILD_DATE }}
             SOURCE_URL=${{ github.server_url }}/${{ github.repository }}
+
+      - name: Run Docker Smoke Test
+        uses: ./.github/actions/docker_smoke_test
+        with:
+          image: matrix-webhook-bridge:ci
