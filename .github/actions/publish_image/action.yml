@@ -28,6 +28,10 @@ inputs:
   server_url:
     description: "GitHub server URL for OCI source label"
     required: true
+  also_tag_latest:
+    description: "Whether to also push the :latest tag"
+    required: false
+    default: "true"
 
 runs:
   using: composite
@@ -67,24 +71,34 @@ runs:
       with:
         image: matrix-webhook-bridge:${{ inputs.version }}-rc
 
-    - name: Push image
-      uses: docker/build-push-action@v7
-      with:
-        context: .
-        file: Dockerfile
-        platforms: linux/amd64
-        push: true
-        build-args: |
-          VERSION=${{ inputs.version }}
-          MAINTAINER=${{ inputs.maintainer }}
-          IMAGE_REVISION=${{ inputs.sha }}
-          BUILD_DATE=${{ inputs.build_date }}
-          SOURCE_URL=${{ inputs.server_url }}/${{ inputs.image_name }}
-        tags: |
-          ${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}
-          ${{ inputs.registry }}/${{ inputs.image_name }}:latest
-        cache-from: type=gha
-        cache-to: type=gha,mode=max
+    - name: Compute push tags
+      id: tags
+      shell: bash
+      run: |
+        tags="${{ inputs.registry }}/${{ inputs.image_name }}:${{ inputs.version }}"
+        if [ "${{ inputs.also_tag_latest }}" = "true" ]; then
+          tags="${tags}"$'\n'"${{ inputs.registry }}/${{ inputs.image_name }}:latest"
+        fi
+        {
+          echo "list<<EOF"
+          echo "$tags"
+          echo "EOF"
+        } >> "$GITHUB_OUTPUT"
+
+    # Tag and push the exact image that was already built and smoke-tested
+    # above, rather than invoking docker/build-push-action a second time.
+    # Building the (possibly untrusted) Dockerfile twice would mean the
+    # smoke test and the published image aren't guaranteed to be the same
+    # bytes - a crafted Dockerfile could behave differently on the second
+    # build and slip an unverified image past the gate.
+    - name: Push the smoke-tested image
+      shell: bash
+      run: |
+        while IFS= read -r tag; do
+          [ -z "$tag" ] && continue
+          docker tag "matrix-webhook-bridge:${{ inputs.version }}-rc" "$tag"
+          docker push "$tag"
+        done <<< "${{ steps.tags.outputs.list }}"
 
     - name: Summary
       shell: bash
@@ -95,4 +109,6 @@ runs:
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
         echo "- \`${{ inputs.version }}\`" >> $GITHUB_STEP_SUMMARY
-        echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ inputs.also_tag_latest }}" = "true" ]; then
+          echo "- \`latest\`" >> $GITHUB_STEP_SUMMARY
+        fi
