@@ -16,7 +16,7 @@
   "dependencyDashboardApproval": false,
   "extends": [
     "config:recommended",
-    "schedule:weekly"
+    "schedule:monthly"
   ],
   "labels": [
     "changelog:skip"
