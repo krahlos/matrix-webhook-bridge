@@ -91,12 +91,34 @@ def _do_request(
     return bytes(resp.data)
 
 
-def _with_retry(fn):
-    """Call fn(), retrying on transient 5xx/network errors using _RETRY_DELAYS."""
+def _attempt_timeout(timeout: int, deadline: float | None) -> float:
+    """Return the timeout for a single attempt, clamped to the remaining budget.
+
+    Halved because _http's Retry(1) can re-send a request once, which would
+    otherwise let one attempt take twice as long as the caller's deadline allows.
+    """
+    if deadline is None:
+        return timeout
+    return min(timeout, (deadline - time.monotonic()) / 2)
+
+
+def _out_of_budget(delay: int, deadline: float | None) -> bool:
+    """Return whether sleeping delay seconds would run past deadline."""
+    return deadline is not None and time.monotonic() + delay >= deadline
+
+
+def _with_retry(fn, timeout: int, deadline: float | None = None):
+    """Call fn(timeout), retrying on transient 5xx/network errors using _RETRY_DELAYS.
+
+    deadline is a time.monotonic() value: no attempt is started and no retry is
+    slept through once it has passed, so the call cannot outlive the caller (#158).
+    """
     delays = iter(_RETRY_DELAYS)
     while True:
+        if deadline is not None and time.monotonic() >= deadline:
+            raise TimeoutError("Matrix request deadline exceeded")
         try:
-            return fn()
+            return fn(_attempt_timeout(timeout, deadline))
         except HTTPError as e:
             try:
                 err_body = e.read().decode("utf-8", errors="replace")
@@ -107,7 +129,7 @@ def _with_retry(fn):
                 logger.error("Matrix request failed (%s %s): %s", e.code, e.reason, err_body)
                 raise wrapped from e
             delay = next(delays, None)
-            if delay is None:
+            if delay is None or _out_of_budget(delay, deadline):
                 logger.error("Matrix request failed (%s %s): %s", e.code, e.reason, err_body)
                 raise wrapped from e
             logger.warning(
@@ -119,7 +141,7 @@ def _with_retry(fn):
             )
         except URLError as e:
             delay = next(delays, None)
-            if delay is None:
+            if delay is None or _out_of_budget(delay, deadline):
                 logger.error("Matrix request failed: %s", e)
                 raise
             logger.warning("Matrix request failed (%s), retrying in %ds", e, delay)
@@ -136,16 +158,16 @@ def join_room(
     """Join a Matrix room as user_id."""
     path = f"/_matrix/client/v3/join/{quote(room_id, safe='')}?user_id={quote(user_id, safe='')}"
 
-    def attempt():
+    def attempt(attempt_timeout):
         headers = {
             "Authorization": f"Bearer {_token(token_file)}",
             "Content-Type": "application/json",
         }
         logger.debug("Joining room %s as %s", room_id, user_id)
-        _do_request(base_url, "POST", path, b"{}", headers, timeout)
+        _do_request(base_url, "POST", path, b"{}", headers, attempt_timeout)
         logger.info("Joined room %s as %s", room_id, user_id)
 
-    _with_retry(attempt)
+    _with_retry(attempt, timeout)
 
 
 def invite_room(
@@ -163,16 +185,16 @@ def invite_room(
     )
     payload = json.dumps({"user_id": invitee_user_id}).encode()
 
-    def attempt():
+    def attempt(attempt_timeout):
         headers = {
             "Authorization": f"Bearer {_token(token_file)}",
             "Content-Type": "application/json",
         }
         logger.debug("Inviting %s to room %s as %s", invitee_user_id, room_id, inviter_user_id)
-        _do_request(base_url, "POST", path, payload, headers, timeout)
+        _do_request(base_url, "POST", path, payload, headers, attempt_timeout)
         logger.info("Invited %s to room %s as %s", invitee_user_id, room_id, inviter_user_id)
 
-    _with_retry(attempt)
+    _with_retry(attempt, timeout)
 
 
 def probe(base_url: str, timeout: int = 5) -> None:
@@ -188,8 +210,16 @@ def notify(
     token_file: str,
     user_id: str,
     timeout: int = 5,
+    deadline: float | None = None,
 ) -> None:
-    """Send a message to the Matrix room."""
+    """Send a message to the Matrix room.
+
+    deadline is a time.monotonic() value after which no further attempt is made,
+    so a slow homeserver cannot deliver once the caller has given up (#158).
+    """
+    # A caller retry mints a new txn, so Matrix cannot deduplicate it. Deriving
+    # txn from a hash of room_id + plain + html would make retries idempotent —
+    # follow-up hardening for the case where the send lands but the reply is lost.
     txn = uuid4().hex
     path = (
         f"/_matrix/client/v3/rooms/{quote(room_id, safe='')}"
@@ -204,13 +234,13 @@ def notify(
         }
     ).encode()
 
-    def attempt():
+    def attempt(attempt_timeout):
         headers = {
             "Authorization": f"Bearer {_token(token_file)}",
             "Content-Type": "application/json",
         }
         logger.debug("Sending Matrix message as %s: %s", user_id, plain)
-        _do_request(base_url, "PUT", path, payload, headers, timeout)
+        _do_request(base_url, "PUT", path, payload, headers, attempt_timeout)
         logger.info("Matrix message sent as %s", user_id)
 
-    _with_retry(attempt)
+    _with_retry(attempt, timeout, deadline)

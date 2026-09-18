@@ -29,6 +29,7 @@ matrix:
 server:
   port: 5001
   default_user: bridge
+  request_timeout: 8
 ```
 
 Mount the `bridge-registration.yml` as an Application Service in your Synapse:
@@ -71,11 +72,20 @@ All configuration is defined in the YAML configuration file (default: `config/br
 | `matrix.timeout`         | no       | `5`      | Timeout for Matrix API requests (seconds)   |
 | `server.port`            | no       | `5001`   | Port to listen on (see note below)          |
 | `server.default_user`    | no       | `bridge` | Fallback sender when no `user` param given  |
+| `server.request_timeout` | no       | `8`      | Max seconds a `/notify` may take            |
 | `server.webhook_secret`  | no       | —        | Shared secret for webhook auth (see below)  |
 
 !!! tip
     When running with Docker, keep `server.port` at `5001` and remap the
     host port in `docker-compose.yml` (e.g. `"8080:5001"`).
+
+### Request timeout
+
+`POST /notify` gives up after `server.request_timeout` seconds and returns `504`,
+including all retries against the homeserver. Keep it below the timeout of
+whatever posts to the bridge — Alertmanager, for example, allows a minimum of
+10 seconds. A caller that times out first retries, and because each retry is a
+new Matrix transaction, a late delivery shows up as a duplicate message.
 
 ### Webhook authentication
 
