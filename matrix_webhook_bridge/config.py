@@ -14,6 +14,7 @@ class Config:
     port: int = 5001
     default_user: str = "bridge"
     matrix_timeout: int = 5
+    request_timeout: int = 8
     webhook_secret: str | None = None
     service_users: dict[str, str] = field(default_factory=dict)
     service_rooms: dict[str, list[str]] = field(default_factory=dict)

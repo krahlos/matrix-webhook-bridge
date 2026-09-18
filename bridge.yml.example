@@ -24,6 +24,11 @@ server:
   # Fallback Matrix user localpart (default: "bridge")
   default_user: bridge
 
+  # Total seconds a POST /notify may spend delivering to Matrix before it gives
+  # up with 504 (default: 8). Keep it below the timeout of whatever posts here,
+  # otherwise the caller retries and each retry becomes a separate message.
+  request_timeout: 8
+
   # Optional shared secret for incoming webhook authentication.
   # When set, all POST requests must include an Authorization header:
   #   Authorization: Bearer <webhook_secret>

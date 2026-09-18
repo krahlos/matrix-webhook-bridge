@@ -265,6 +265,7 @@ async def healthy_matrix(config: Config = Depends(_get_config)):
         401: {"description": "Missing or invalid Authorization header"},
         413: {"description": "Request body exceeds 1 MiB"},
         500: {"description": "One or more Matrix deliveries failed"},
+        504: {"description": "Deliveries did not finish within server.request_timeout"},
     },
 )
 async def notify(
@@ -313,8 +314,22 @@ async def notify(
     )
 
     rooms = resolve_rooms(service, room, config)
+    # Bound the whole request: without this, deliveries keep retrying in their
+    # worker thread long after the caller timed out and retried, and each retry
+    # arrives in Matrix as a separate message (#158).
+    deadline = time.monotonic() + config.request_timeout
+    deliveries = plan_deliveries(data, format_fn, rooms)
     failed = False
-    for plain, html, room_id in plan_deliveries(data, format_fn, rooms):
+    for i, (plain, html, room_id) in enumerate(deliveries):
+        if time.monotonic() >= deadline:
+            skipped = len(deliveries) - i
+            logger.error(
+                "notify deadline exceeded",
+                extra={"service": service, "user": user, "skipped": skipped},
+            )
+            metrics.notify_failure_total.labels(service=service or "").inc(skipped)
+            failed = True
+            break
         try:
             await asyncio.to_thread(
                 _matrix_notify,
@@ -325,6 +340,7 @@ async def notify(
                 _token_path(user),
                 user_id,
                 config.matrix_timeout,
+                deadline,
             )
             metrics.notify_success_total.labels(service=service or "").inc()
         except Exception as e:
@@ -336,7 +352,7 @@ async def notify(
             failed = True
 
     if failed:
-        raise HTTPException(status_code=500)
+        raise HTTPException(status_code=504 if time.monotonic() >= deadline else 500)
 
 
 def run_server(config: Config) -> None:
